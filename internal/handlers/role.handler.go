@@ -33,7 +33,6 @@ func (h *HttpRoleHandler) CreateRoleHandler(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message": "create role successful.",
-		"body":    role,
 	})
 
 }
@@ -68,12 +67,21 @@ func (h *HttpRoleHandler) GetAllRolesHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid ID",
+		})
+	}
+
 	var role entities.Role
 	if err := c.BodyParser(&role); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request.",
 		})
 	}
+
+	role.ID = id
 
 	if err := h.roleUseCase.UpdateRole(role); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

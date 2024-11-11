@@ -42,7 +42,7 @@ func (r *roleRepository) GetAll() ([]entities.Role, error) {
 }
 
 func (r *roleRepository) Create(role *entities.Role) error {
-	err := r.db.Create(role).Error
+	err := r.db.Create(&role).Error
 	if err != nil {
 		return err
 	}

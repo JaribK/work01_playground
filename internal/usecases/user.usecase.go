@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"errors"
 	"work01/internal/entities"
 	"work01/internal/repositories"
 
@@ -24,7 +25,25 @@ func NewUserService(repo repositories.UserRepository) UserUseCase {
 }
 
 func (s *UserService) CreateUser(user entities.User) error {
-	err := s.repo.Create(&user)
+	emailExists, err := s.repo.IsEmailExists(user.Email)
+	if err != nil {
+		return err
+	}
+
+	if emailExists {
+		return errors.New("email already exists")
+	}
+
+	phoneExists, err := s.repo.IsPhoneExists(user.PhoneNumber)
+	if err != nil {
+		return err
+	}
+
+	if phoneExists {
+		return errors.New("phone already exists")
+	}
+
+	err = s.repo.Create(&user)
 	if err != nil {
 		return err
 	}
@@ -51,6 +70,28 @@ func (s *UserService) GetAllUsers() ([]entities.User, error) {
 }
 
 func (s *UserService) UpdateUser(user entities.User) error {
+	if user.Email != "" {
+		Exists, err := s.repo.IsEmailExistsForUpdate(user.Email, user.ID)
+		if err != nil {
+			return err
+		}
+
+		if Exists {
+			return errors.New("email already exists")
+		}
+	}
+
+	if user.PhoneNumber != "" {
+		Exists, err := s.repo.IsPhoneExistsForUpdate(user.PhoneNumber, user.ID)
+		if err != nil {
+			return err
+		}
+
+		if Exists {
+			return errors.New("phone already exists")
+		}
+	}
+
 	err := s.repo.Update(&user)
 	if err != nil {
 		return err

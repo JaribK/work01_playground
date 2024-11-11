@@ -33,7 +33,6 @@ func (h *HttpUserHandler) CreateUserHandler(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message": "create user successful.",
-		"body":    user,
 	})
 }
 
@@ -67,13 +66,21 @@ func (h *HttpUserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpUserHandler) UpdateUserHandler(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid ID.",
+		})
+	}
+
 	var user entities.User
-	if err := c.ParamsParser(&user); err != nil {
+	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request.",
 		})
 	}
 
+	user.ID = id
 	if err := h.userUseCase.UpdateUser(user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"err": err.Error(),
