@@ -90,7 +90,7 @@ func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "update role succesful.",
+		"message": "update role successful.",
 		"ID role": role.ID,
 	})
 }
