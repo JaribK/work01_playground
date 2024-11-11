@@ -27,7 +27,7 @@ func (h *HttpRoleHandler) CreateRoleHandler(c *fiber.Ctx) error {
 	role.ID = uuid.New()
 	if err := h.roleUseCase.CreateRole(role); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error,
+			"error": err.Error(),
 		})
 	}
 
@@ -39,11 +39,10 @@ func (h *HttpRoleHandler) CreateRoleHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpRoleHandler) GetRoleByIdHandler(c *fiber.Ctx) error {
-	idStr := c.Params("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid uuid.",
+			"error": "Invalid ID.",
 		})
 	}
 
@@ -57,11 +56,11 @@ func (h *HttpRoleHandler) GetRoleByIdHandler(c *fiber.Ctx) error {
 	return c.JSON(role)
 }
 
-func (h *HttpRoleHandler) GetAllRoleHandler(c *fiber.Ctx) error {
+func (h *HttpRoleHandler) GetAllRolesHandler(c *fiber.Ctx) error {
 	roles, err := h.roleUseCase.GetAllRoles()
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "not found data.",
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Unable to fetch roles.",
 		})
 	}
 
@@ -78,32 +77,32 @@ func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 
 	if err := h.roleUseCase.UpdateRole(role); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error,
+			"error": err.Error(),
 		})
 	}
 
 	return c.JSON(fiber.Map{
 		"message": "update role succesful.",
+		"ID role": role.ID,
 	})
 }
 
 func (h *HttpRoleHandler) DeleteRoleHandler(c *fiber.Ctx) error {
-	idStr := c.Params("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid uuid",
+			"error": "Invalid ID",
 		})
 	}
 
 	if err := h.roleUseCase.DeleteRole(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error,
+			"error": err.Error(),
 		})
 	}
 
 	return c.JSON(fiber.Map{
-		"message":   "detele role successful.",
-		"uuid role": id,
+		"message": "detele role successful.",
+		"ID role": id,
 	})
 }

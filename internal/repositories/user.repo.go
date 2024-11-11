@@ -12,6 +12,11 @@ type userRepository struct {
 }
 
 type UserRepository interface {
+	Create(user *entities.User) error
+	GetById(id uuid.UUID) (*entities.User, error)
+	GetAll() ([]entities.User, error)
+	Update(user *entities.User) error
+	Delete(id uuid.UUID) error
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {

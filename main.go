@@ -58,10 +58,20 @@ func main() {
 	roleHandler := handlers.NewHttpRoleHandler(roleUsecase)
 
 	app.Get("/roles/:id", roleHandler.GetRoleByIdHandler)
-	app.Get("/roles", roleHandler.GetAllRoleHandler)
+	app.Get("/roles", roleHandler.GetAllRolesHandler)
 	app.Post("/roles", roleHandler.CreateRoleHandler)
 	app.Put("/roles/:id", roleHandler.UpdateRoleHandler)
 	app.Delete("/roles/:id", roleHandler.DeleteRoleHandler)
+
+	userRepo := repositories.NewUserRepository(db)
+	userUsecase := usecases.NewUserService(userRepo)
+	userHandler := handlers.NewHttpUserHandler(userUsecase)
+
+	app.Get("/users/:id", userHandler.GetUserByIdHandler)
+	app.Get("/users", userHandler.GetAllUsersHandler)
+	app.Post("/users", userHandler.CreateUserHandler)
+	app.Put("/users/:id", userHandler.UpdateUserHandler)
+	app.Delete("/users/:id", userHandler.DeleteUserHandler)
 
 	app.Listen(":8080")
 
