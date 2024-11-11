@@ -73,6 +73,26 @@ func main() {
 	app.Put("/users/:id", userHandler.UpdateUserHandler)
 	app.Delete("/users/:id", userHandler.DeleteUserHandler)
 
+	featureRepo := repositories.NewFeatureRepository(db)
+	featureUsecase := usecases.NewFeatureService(featureRepo)
+	featureHandler := handlers.NewHttpFeatureHandler(featureUsecase)
+
+	app.Get("/features/:id", featureHandler.GetFeatureByIdHandler)
+	app.Get("/features", featureHandler.GetAllFeaturesHandler)
+	app.Post("/features", featureHandler.CreateFeatureHandler)
+	app.Put("/features/:id", featureHandler.UpdateFeatureHandler)
+	app.Delete("/features/:id", featureHandler.DeleteFeatureHandler)
+
+	permissionRepo := repositories.NewPermissionRepository(db)
+	permissionUsecase := usecases.NewPermissionService(permissionRepo)
+	permissionHandler := handlers.NewHttpPermissionHandler(permissionUsecase)
+
+	app.Get("/permissions/:id", permissionHandler.GetPermissionByIdHandler)
+	app.Get("/permissions", permissionHandler.GetAllPermissionsHandler)
+	app.Post("/permissions", permissionHandler.CreatePermissionHandler)
+	app.Put("/permissions/:id", permissionHandler.UpdatePermissionHandler)
+	app.Delete("/permissions/:id", permissionHandler.DeletePermissionHandler)
+
 	app.Listen(":8080")
 
 }
