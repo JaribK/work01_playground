@@ -26,6 +26,10 @@ func NewUserService(repo repositories.UserRepository) UserUseCase {
 }
 
 func (s *UserService) CreateUser(user entities.User) error {
+	if user.FirstName == "" || user.LastName == "" || user.Email == "" || user.PhoneNumber == "" || user.Password == "" {
+		return fmt.Errorf("please fill all theese field -> firstName, lastName, email, phoneNumber and password")
+	}
+
 	emailExists, err := s.repo.IsEmailExists(user.Email)
 	if err != nil {
 		return err

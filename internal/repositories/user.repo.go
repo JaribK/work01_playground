@@ -4,6 +4,7 @@ import (
 	"work01/internal/entities"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +29,13 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r *userRepository) Create(user *entities.User) error {
-	err := r.db.Create(&user).Error
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user.Password = string(hashedPassword)
+	err = r.db.Create(&user).Error
 	if err != nil {
 		return err
 	}
