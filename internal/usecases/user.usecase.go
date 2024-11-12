@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"errors"
+	"fmt"
 	"work01/internal/entities"
 	"work01/internal/repositories"
 
@@ -31,7 +32,7 @@ func (s *UserService) CreateUser(user entities.User) error {
 	}
 
 	if emailExists {
-		return errors.New("email already exists")
+		return fmt.Errorf("email already exists")
 	}
 
 	phoneExists, err := s.repo.IsPhoneExists(user.PhoneNumber)
@@ -40,7 +41,7 @@ func (s *UserService) CreateUser(user entities.User) error {
 	}
 
 	if phoneExists {
-		return errors.New("phone already exists")
+		return fmt.Errorf("phone already exists")
 	}
 
 	err = s.repo.Create(&user)

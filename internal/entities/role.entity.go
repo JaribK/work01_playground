@@ -4,19 +4,28 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Role struct {
-	ID        uuid.UUID  `json:"id" gorm:"type:uuid;primaryKey;"`
-	Name      string     `json:"name" gorm:"not null"`
-	Level     int32      `json:"level" gorm:"not null"`
-	CreatedAt time.Time  `json:"created_at"`
-	CreatedBy uuid.UUID  `json:"created_by,omitempty" gorm:"type:uuid"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	UpdatedBy uuid.UUID  `json:"updated_by" gorm:"type:uuid"`
-	DeletedAt *time.Time `json:"deleted_at"`
-	DeletedBy *uuid.UUID `json:"deleted_by" gorm:"type:uuid;index"`
-	// Permissions []Permission `gorm:"many2many:role_permissions;"`
+	ID          uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;"`
+	Name        string         `json:"name" gorm:"not null;unique"`
+	Level       int32          `json:"level" gorm:"not null;default:0"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	CreatedBy   uuid.UUID      `json:"createdBy,omitempty" gorm:"type:uuid"`
+	UpdatedAt   time.Time      `json:"updatedAt"`
+	UpdatedBy   uuid.UUID      `json:"updatedBy" gorm:"type:uuid"`
+	DeletedAt   gorm.DeletedAt `json:"-"`
+	DeletedBy   *uuid.UUID     `json:"-" gorm:"type:uuid;index;"`
+	Permissions []*Permission  `gorm:"many2many:role_permissions;"`
+}
+
+type RolePermission struct {
+	ID     uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;"`
+	RoleID uuid.UUID `json:"roleId" gorm:"type:uuid;primaryKey;"`
+	// Role Role
+	PermissionID uuid.UUID `json:"permissionId" gorm:"type:uuid;primaryKey;"`
+	// Permission Permission
 }
 
 // type Permission struct {

@@ -37,7 +37,7 @@ func (r *userRepository) Create(user *entities.User) error {
 
 func (r *userRepository) GetById(id uuid.UUID) (*entities.User, error) {
 	var user entities.User
-	err := r.db.Preload("Role").Where("id=?", id).First(&user).Error
+	err := r.db.Where("id=?", id).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (r *userRepository) GetById(id uuid.UUID) (*entities.User, error) {
 
 func (r *userRepository) GetAll() ([]entities.User, error) {
 	var users []entities.User
-	err := r.db.Preload("Role").Find(&users).Error
+	err := r.db.Find(&users).Error
 	if err != nil {
 		return nil, err
 	}

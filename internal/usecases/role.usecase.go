@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"fmt"
 	"work01/internal/entities"
 	"work01/internal/repositories"
 
@@ -24,6 +25,9 @@ func NewRoleService(repo repositories.RoleRepository) RoleUseCase {
 }
 
 func (s *RoleService) CreateRole(role entities.Role) error {
+	if role.Name == "" {
+		return fmt.Errorf("role name cannot be empty")
+	}
 	err := s.repo.Create(&role)
 	if err != nil {
 		return err

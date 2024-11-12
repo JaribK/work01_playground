@@ -49,7 +49,8 @@ func main() {
 		panic("failed connect to database")
 	}
 
-	// db.AutoMigrate(&entities.Role{}, &entities.Feature{}, &entities.User{}, &entities.Permission{})
+	// db.Migrator().DropTable(&entities.Role{}, &entities.Feature{}, &entities.User{}, &entities.Permission{}, &entities.RolePermission{})
+	// db.AutoMigrate(&entities.Role{}, &entities.Feature{}, &entities.User{}, &entities.Permission{}, &entities.RolePermission{})
 
 	app := fiber.New()
 
@@ -92,6 +93,16 @@ func main() {
 	app.Post("/permissions", permissionHandler.CreatePermissionHandler)
 	app.Put("/permissions/:id", permissionHandler.UpdatePermissionHandler)
 	app.Delete("/permissions/:id", permissionHandler.DeletePermissionHandler)
+
+	rolePermissionRepo := repositories.NewRolePermissionRepository(db)
+	rolePermissionUsecase := usecases.NewRolePermissionService(rolePermissionRepo)
+	rolePermissionHandler := handlers.NewHttpRolePermissionHandler(rolePermissionUsecase)
+
+	app.Get("/rolePermissions/:id", rolePermissionHandler.GetRolePermissionByIdHandler)
+	app.Get("/rolePermissions", rolePermissionHandler.GetAllRolePermissionsHandler)
+	app.Post("/rolePermissions", rolePermissionHandler.CreateRolePermissionHandler)
+	app.Put("/rolePermissions/:id", rolePermissionHandler.UpdateRolePermissionHandler)
+	app.Delete("/rolePermissions/:id", rolePermissionHandler.DeleteRolePermissionHandler)
 
 	app.Listen(":8080")
 
