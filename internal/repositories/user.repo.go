@@ -18,6 +18,7 @@ type UserRepository interface {
 	GetAll() ([]entities.User, error)
 	Update(user *entities.User) error
 	Delete(id uuid.UUID) error
+	GetUserByEmail(email string) (*entities.User, error)
 	IsEmailExists(email string) (bool, error)
 	IsPhoneExists(phone string) (bool, error)
 	IsEmailExistsForUpdate(email string, id uuid.UUID) (bool, error)
@@ -68,13 +69,22 @@ func (r *userRepository) Update(user *entities.User) error {
 	return nil
 }
 
-func (r *userRepository) Delete(id uuid.UUID) error {
+func (r *userRepository) Delete(id uuid.UUID,) error {
 	err := r.db.Delete(&entities.User{}, id).Error
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (r *userRepository) GetUserByEmail(email string) (*entities.User, error) {
+	var user entities.User
+	err := r.db.Where("email=?", email).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *userRepository) IsEmailExists(email string) (bool, error) {

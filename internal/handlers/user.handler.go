@@ -24,7 +24,13 @@ func (h *HttpUserHandler) CreateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	creBy, err := uuid.Parse(c.Locals("userId").(string))
+	if err != nil {
+		return err
+	}
+
 	user.ID = uuid.New()
+	user.CreatedBy = creBy
 	if err := h.userUseCase.CreateUser(user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -80,7 +86,13 @@ func (h *HttpUserHandler) UpdateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	updBy, err := uuid.Parse(c.Locals("userId").(string))
+	if err != nil {
+		return err
+	}
+
 	user.ID = id
+	user.UpdatedBy = updBy
 	if err := h.userUseCase.UpdateUser(user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"err": err.Error(),
@@ -110,5 +122,32 @@ func (h *HttpUserHandler) DeleteUserHandler(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "delete user successful.",
 		"ID user": id,
+	})
+}
+
+func (h *HttpUserHandler) LoginHandler(c *fiber.Ctx) error {
+	var requests struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := c.BodyParser(&requests); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid request",
+		})
+	}
+
+	user, token, err := h.userUseCase.Login(requests.Email, requests.Password)
+
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Login successful",
+		"user":    user,
+		"token":   token,
 	})
 }

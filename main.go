@@ -9,6 +9,7 @@ import (
 	"work01/internal/handlers"
 	"work01/internal/repositories"
 	"work01/internal/usecases"
+	"work01/pkg"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -54,6 +55,18 @@ func main() {
 
 	app := fiber.New()
 
+	userRepo := repositories.NewUserRepository(db)
+	userUsecase := usecases.NewUserService(userRepo)
+	userHandler := handlers.NewHttpUserHandler(userUsecase)
+
+	app.Post("/login", userHandler.LoginHandler)
+	app.Use("/users", pkg.TokenValidationMiddleware)
+	app.Get("/users/:id", userHandler.GetUserByIdHandler)
+	app.Get("/users", userHandler.GetAllUsersHandler)
+	app.Post("/users", userHandler.CreateUserHandler)
+	app.Put("/users/:id", userHandler.UpdateUserHandler)
+	app.Delete("/users/:id", userHandler.DeleteUserHandler)
+
 	roleRepo := repositories.NewRoleRepository(db)
 	roleUsecase := usecases.NewRoleService(roleRepo)
 	roleHandler := handlers.NewHttpRoleHandler(roleUsecase)
@@ -63,16 +76,6 @@ func main() {
 	app.Post("/roles", roleHandler.CreateRoleHandler)
 	app.Put("/roles/:id", roleHandler.UpdateRoleHandler)
 	app.Delete("/roles/:id", roleHandler.DeleteRoleHandler)
-
-	userRepo := repositories.NewUserRepository(db)
-	userUsecase := usecases.NewUserService(userRepo)
-	userHandler := handlers.NewHttpUserHandler(userUsecase)
-
-	app.Get("/users/:id", userHandler.GetUserByIdHandler)
-	app.Get("/users", userHandler.GetAllUsersHandler)
-	app.Post("/users", userHandler.CreateUserHandler)
-	app.Put("/users/:id", userHandler.UpdateUserHandler)
-	app.Delete("/users/:id", userHandler.DeleteUserHandler)
 
 	featureRepo := repositories.NewFeatureRepository(db)
 	featureUsecase := usecases.NewFeatureService(featureRepo)

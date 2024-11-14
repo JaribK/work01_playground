@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"work01/internal/entities"
 	"work01/internal/repositories"
+	"work01/pkg"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/google/uuid"
 )
@@ -15,6 +18,7 @@ type UserUseCase interface {
 	GetAllUsers() ([]entities.User, error)
 	UpdateUser(user entities.User) error
 	DeleteUser(id uuid.UUID) error
+	Login(email, password string) (*entities.User, string, error)
 }
 
 type UserService struct {
@@ -112,4 +116,24 @@ func (s *UserService) DeleteUser(id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (s UserService) Login(email, password string) (*entities.User, string, error) {
+	user, err := s.repo.GetUserByEmail(email)
+	if err != nil {
+		return nil, "", fmt.Errorf("email or password Incorrect")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return nil, "", fmt.Errorf("email or password Incorrect")
+	}
+
+	token, err := pkg.GenerateToken(*user)
+	if err != nil {
+		return nil, "", fmt.Errorf("could not generate token: %v", err)
+	}
+
+	return user, token, nil
+
 }

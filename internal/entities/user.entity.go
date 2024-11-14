@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // `gorm:"unique;not null;type:varchar(100);default:null"`
@@ -21,12 +22,12 @@ type User struct {
 	TwoFactorAuthUrl  string     `json:"twoFacterAuthUrl" gorm:"type:varchar"`
 	RoleId            *uuid.UUID `json:"roleId" gorm:"type:uuid"`
 	// Role               Role       `json:"role"`
-	ForgotPasswordCode string     `json:"forgotPasswordCode" gorm:"type:varchar"`
-	IsActive           bool       `json:"isActive" gorm:"default:true"`
-	CreatedAt          time.Time  `json:"createdAt"`
-	CreatedBy          uuid.UUID  `json:"createdBy" gorm:"type:uuid"`
-	UpdatedAt          time.Time  `json:"updatedAt"`
-	UpdatedBy          uuid.UUID  `json:"updatedBy" gorm:"type:uuid"`
-	DeletedAt          *time.Time `json:"-"`
-	DeletedBy          *uuid.UUID `json:"-" gorm:"type:uuid;index;"`
+	ForgotPasswordCode string         `json:"forgotPasswordCode" gorm:"type:varchar"`
+	IsActive           bool           `json:"isActive" gorm:"default:true"`
+	CreatedAt          time.Time      `json:"createdAt"`
+	CreatedBy          uuid.UUID      `json:"createdBy" gorm:"type:uuid"`
+	UpdatedAt          time.Time      `json:"updatedAt"`
+	UpdatedBy          uuid.UUID      `json:"updatedBy" gorm:"type:uuid"`
+	DeletedAt          gorm.DeletedAt `json:"-"`
+	DeletedBy          *uuid.UUID     `json:"-" gorm:"type:uuid;index;"`
 }
