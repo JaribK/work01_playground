@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"work01/internal/auth"
 	"work01/internal/handlers"
 	"work01/internal/repositories"
 	"work01/internal/usecases"
@@ -55,11 +56,15 @@ func main() {
 
 	app := fiber.New()
 
+	authRepo := auth.NewAuthRepository(db)
+	authUsecase := auth.NewAuthUsecase(authRepo)
+	authHandler := auth.NewHttpAuthHandler(authUsecase)
+
 	userRepo := repositories.NewUserRepository(db)
-	userUsecase := usecases.NewUserService(userRepo)
+	userUsecase := usecases.NewUserUsecase(userRepo)
 	userHandler := handlers.NewHttpUserHandler(userUsecase)
 
-	app.Post("/login", userHandler.LoginHandler)
+	app.Post("/login", authHandler.LoginHandler)
 	app.Use("/users", pkg.TokenValidationMiddleware)
 	app.Get("/users/:id", userHandler.GetUserByIdHandler)
 	app.Get("/users", userHandler.GetAllUsersHandler)
@@ -68,7 +73,7 @@ func main() {
 	app.Delete("/users/:id", userHandler.DeleteUserHandler)
 
 	roleRepo := repositories.NewRoleRepository(db)
-	roleUsecase := usecases.NewRoleService(roleRepo)
+	roleUsecase := usecases.NewRoleUsecase(roleRepo)
 	roleHandler := handlers.NewHttpRoleHandler(roleUsecase)
 
 	app.Get("/roles/:id", roleHandler.GetRoleByIdHandler)
@@ -78,7 +83,7 @@ func main() {
 	app.Delete("/roles/:id", roleHandler.DeleteRoleHandler)
 
 	featureRepo := repositories.NewFeatureRepository(db)
-	featureUsecase := usecases.NewFeatureService(featureRepo)
+	featureUsecase := usecases.NewFeatureUsecase(featureRepo)
 	featureHandler := handlers.NewHttpFeatureHandler(featureUsecase)
 
 	app.Get("/features/:id", featureHandler.GetFeatureByIdHandler)
@@ -88,7 +93,7 @@ func main() {
 	app.Delete("/features/:id", featureHandler.DeleteFeatureHandler)
 
 	permissionRepo := repositories.NewPermissionRepository(db)
-	permissionUsecase := usecases.NewPermissionService(permissionRepo)
+	permissionUsecase := usecases.NewPermissionUsecase(permissionRepo)
 	permissionHandler := handlers.NewHttpPermissionHandler(permissionUsecase)
 
 	app.Get("/permissions/:id", permissionHandler.GetPermissionByIdHandler)
@@ -98,7 +103,7 @@ func main() {
 	app.Delete("/permissions/:id", permissionHandler.DeletePermissionHandler)
 
 	rolePermissionRepo := repositories.NewRolePermissionRepository(db)
-	rolePermissionUsecase := usecases.NewRolePermissionService(rolePermissionRepo)
+	rolePermissionUsecase := usecases.NewRolePermissionUsecase(rolePermissionRepo)
 	rolePermissionHandler := handlers.NewHttpRolePermissionHandler(rolePermissionUsecase)
 
 	app.Get("/rolePermissions/:id", rolePermissionHandler.GetRolePermissionByIdHandler)

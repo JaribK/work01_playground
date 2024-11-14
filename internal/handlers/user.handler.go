@@ -9,10 +9,10 @@ import (
 )
 
 type HttpUserHandler struct {
-	userUseCase usecases.UserUseCase
+	userUseCase usecases.UserUsecase
 }
 
-func NewHttpUserHandler(useCase usecases.UserUseCase) *HttpUserHandler {
+func NewHttpUserHandler(useCase usecases.UserUsecase) *HttpUserHandler {
 	return &HttpUserHandler{userUseCase: useCase}
 }
 
@@ -125,29 +125,29 @@ func (h *HttpUserHandler) DeleteUserHandler(c *fiber.Ctx) error {
 	})
 }
 
-func (h *HttpUserHandler) LoginHandler(c *fiber.Ctx) error {
-	var requests struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+// func (h *HttpUserHandler) LoginHandler(c *fiber.Ctx) error {
+// 	var requests struct {
+// 		Email    string `json:"email"`
+// 		Password string `json:"password"`
+// 	}
 
-	if err := c.BodyParser(&requests); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request",
-		})
-	}
+// 	if err := c.BodyParser(&requests); err != nil {
+// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error": "invalid request",
+// 		})
+// 	}
 
-	user, token, err := h.userUseCase.Login(requests.Email, requests.Password)
+// 	user, token, err := h.userUseCase.Login(requests.Email, requests.Password)
 
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
+// 	if err != nil {
+// 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+// 			"error": err.Error(),
+// 		})
+// 	}
 
-	return c.JSON(fiber.Map{
-		"message": "Login successful",
-		"user":    user,
-		"token":   token,
-	})
-}
+// 	return c.JSON(fiber.Map{
+// 		"message": "Login successful",
+// 		"user":    user,
+// 		"token":   token,
+// 	})
+// }

@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type FeatureUseCase interface {
+type FeatureUsecase interface {
 	CreateFeature(feature entities.Feature) error
 	GetFeatureById(id uuid.UUID) (*entities.Feature, error)
 	GetAllFeatures() ([]entities.Feature, error)
@@ -15,15 +15,15 @@ type FeatureUseCase interface {
 	DeleteFeature(id uuid.UUID) error
 }
 
-type FeatureService struct {
+type featureUsecase struct {
 	repo repositories.FeatureRepository
 }
 
-func NewFeatureService(repo repositories.FeatureRepository) FeatureUseCase {
-	return &FeatureService{repo: repo}
+func NewFeatureUsecase(repo repositories.FeatureRepository) FeatureUsecase {
+	return &featureUsecase{repo: repo}
 }
 
-func (s *FeatureService) CreateFeature(feature entities.Feature) error {
+func (s *featureUsecase) CreateFeature(feature entities.Feature) error {
 	err := s.repo.Create(&feature)
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func (s *FeatureService) CreateFeature(feature entities.Feature) error {
 	return nil
 }
 
-func (s *FeatureService) GetFeatureById(id uuid.UUID) (*entities.Feature, error) {
+func (s *featureUsecase) GetFeatureById(id uuid.UUID) (*entities.Feature, error) {
 	feature, err := s.repo.GetById(id)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (s *FeatureService) GetFeatureById(id uuid.UUID) (*entities.Feature, error)
 	return feature, nil
 }
 
-func (s *FeatureService) GetAllFeatures() ([]entities.Feature, error) {
+func (s *featureUsecase) GetAllFeatures() ([]entities.Feature, error) {
 	features, err := s.repo.GetAll()
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (s *FeatureService) GetAllFeatures() ([]entities.Feature, error) {
 	return features, nil
 }
 
-func (s *FeatureService) UpdateFeature(feature entities.Feature) error {
+func (s *featureUsecase) UpdateFeature(feature entities.Feature) error {
 	err := s.repo.Update(&feature)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func (s *FeatureService) UpdateFeature(feature entities.Feature) error {
 	return nil
 }
 
-func (s *FeatureService) DeleteFeature(id uuid.UUID) error {
+func (s *featureUsecase) DeleteFeature(id uuid.UUID) error {
 	err := s.repo.Delete(id)
 	if err != nil {
 		return err

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type RoleUseCase interface {
+type RoleUsecase interface {
 	CreateRole(role entities.Role) error
 	GetRoleById(id uuid.UUID) (*entities.Role, error)
 	GetAllRoles() ([]entities.Role, error)
@@ -16,15 +16,15 @@ type RoleUseCase interface {
 	DeleteRole(id uuid.UUID) error
 }
 
-type RoleService struct {
+type roleUsecase struct {
 	repo repositories.RoleRepository
 }
 
-func NewRoleService(repo repositories.RoleRepository) RoleUseCase {
-	return &RoleService{repo: repo}
+func NewRoleUsecase(repo repositories.RoleRepository) RoleUsecase {
+	return &roleUsecase{repo: repo}
 }
 
-func (s *RoleService) CreateRole(role entities.Role) error {
+func (s *roleUsecase) CreateRole(role entities.Role) error {
 	if role.Name == "" {
 		return fmt.Errorf("role name cannot be empty")
 	}
@@ -35,7 +35,7 @@ func (s *RoleService) CreateRole(role entities.Role) error {
 	return nil
 }
 
-func (s *RoleService) GetRoleById(id uuid.UUID) (*entities.Role, error) {
+func (s *roleUsecase) GetRoleById(id uuid.UUID) (*entities.Role, error) {
 	role, err := s.repo.GetById(id)
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func (s *RoleService) GetRoleById(id uuid.UUID) (*entities.Role, error) {
 	return role, nil
 }
 
-func (s *RoleService) GetAllRoles() ([]entities.Role, error) {
+func (s *roleUsecase) GetAllRoles() ([]entities.Role, error) {
 	roles, err := s.repo.GetAll()
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (s *RoleService) GetAllRoles() ([]entities.Role, error) {
 	return roles, nil
 }
 
-func (s *RoleService) UpdateRole(role entities.Role) error {
+func (s *roleUsecase) UpdateRole(role entities.Role) error {
 	err := s.repo.Update(&role)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func (s *RoleService) UpdateRole(role entities.Role) error {
 	return nil
 }
 
-func (s *RoleService) DeleteRole(id uuid.UUID) error {
+func (s *roleUsecase) DeleteRole(id uuid.UUID) error {
 	err := s.repo.Delete(id)
 	if err != nil {
 		return err

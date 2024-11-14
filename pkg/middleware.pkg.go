@@ -1,6 +1,8 @@
 package pkg
 
 import (
+	"work01/internal/auth"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -16,9 +18,9 @@ func TokenValidationMiddleware(c *fiber.Ctx) error {
 
 	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
 		tokenString = tokenString[7:]
-	}
+	} //ไม่แน่ใจ
 
-	token, err := ValidateToken(tokenString)
+	token, err := auth.ValidateToken(tokenString)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid token",
@@ -32,10 +34,10 @@ func TokenValidationMiddleware(c *fiber.Ctx) error {
 		})
 	}
 
-	userId, ok := claims["user_id"]
+	userId, ok := claims["userId"]
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "user_id missing from token",
+			"error": "userId missing from token",
 		})
 	}
 

@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type RolePermissionUseCase interface {
+type RolePermissionUsecase interface {
 	CreateRolePermission(rolePermission entities.RolePermission) error
 	GetRolePermissionById(id uuid.UUID) (*entities.RolePermission, error)
 	GetAllRolePermissions() ([]entities.RolePermission, error)
@@ -15,15 +15,15 @@ type RolePermissionUseCase interface {
 	DeleteRolePermission(id uuid.UUID) error
 }
 
-type RolePermissionService struct {
+type rolePermissionUsecase struct {
 	repo repositories.RolePermissionRepository
 }
 
-func NewRolePermissionService(repo repositories.RolePermissionRepository) RolePermissionUseCase {
-	return &RolePermissionService{repo: repo}
+func NewRolePermissionUsecase(repo repositories.RolePermissionRepository) RolePermissionUsecase {
+	return &rolePermissionUsecase{repo: repo}
 }
 
-func (s *RolePermissionService) CreateRolePermission(rolePermission entities.RolePermission) error {
+func (s *rolePermissionUsecase) CreateRolePermission(rolePermission entities.RolePermission) error {
 	err := s.repo.Create(&rolePermission)
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func (s *RolePermissionService) CreateRolePermission(rolePermission entities.Rol
 	return nil
 }
 
-func (s *RolePermissionService) GetRolePermissionById(id uuid.UUID) (*entities.RolePermission, error) {
+func (s *rolePermissionUsecase) GetRolePermissionById(id uuid.UUID) (*entities.RolePermission, error) {
 	rolePermission, err := s.repo.GetById(id)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (s *RolePermissionService) GetRolePermissionById(id uuid.UUID) (*entities.R
 	return rolePermission, nil
 }
 
-func (s *RolePermissionService) GetAllRolePermissions() ([]entities.RolePermission, error) {
+func (s *rolePermissionUsecase) GetAllRolePermissions() ([]entities.RolePermission, error) {
 	rolePermissions, err := s.repo.GetAll()
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (s *RolePermissionService) GetAllRolePermissions() ([]entities.RolePermissi
 	return rolePermissions, nil
 }
 
-func (s *RolePermissionService) UpdateRolePermission(rolePermission entities.RolePermission) error {
+func (s *rolePermissionUsecase) UpdateRolePermission(rolePermission entities.RolePermission) error {
 	err := s.repo.Update(&rolePermission)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func (s *RolePermissionService) UpdateRolePermission(rolePermission entities.Rol
 	return nil
 }
 
-func (s *RolePermissionService) DeleteRolePermission(id uuid.UUID) error {
+func (s *rolePermissionUsecase) DeleteRolePermission(id uuid.UUID) error {
 	err := s.repo.Delete(id)
 	if err != nil {
 		return err

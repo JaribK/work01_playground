@@ -9,10 +9,10 @@ import (
 )
 
 type HttpPermissionHandler struct {
-	permissionUseCase usecases.PermissionUseCase
+	permissionUseCase usecases.PermissionUsecase
 }
 
-func NewHttpPermissionHandler(useCase usecases.PermissionUseCase) *HttpPermissionHandler {
+func NewHttpPermissionHandler(useCase usecases.PermissionUsecase) *HttpPermissionHandler {
 	return &HttpPermissionHandler{permissionUseCase: useCase}
 }
 

@@ -5,31 +5,28 @@ import (
 	"fmt"
 	"work01/internal/entities"
 	"work01/internal/repositories"
-	"work01/pkg"
-
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/google/uuid"
 )
 
-type UserUseCase interface {
+type UserUsecase interface {
 	CreateUser(user entities.User) error
 	GetUserById(id uuid.UUID) (*entities.User, error)
 	GetAllUsers() ([]entities.User, error)
 	UpdateUser(user entities.User) error
 	DeleteUser(id uuid.UUID) error
-	Login(email, password string) (*entities.User, string, error)
+	// Login(email, password string) (*entities.User, string, error)
 }
 
-type UserService struct {
+type userUsecase struct {
 	repo repositories.UserRepository
 }
 
-func NewUserService(repo repositories.UserRepository) UserUseCase {
-	return &UserService{repo: repo}
+func NewUserUsecase(repo repositories.UserRepository) UserUsecase {
+	return &userUsecase{repo: repo}
 }
 
-func (s *UserService) CreateUser(user entities.User) error {
+func (s *userUsecase) CreateUser(user entities.User) error {
 	if user.FirstName == "" || user.LastName == "" || user.Email == "" || user.PhoneNumber == "" || user.Password == "" {
 		return fmt.Errorf("please fill all theese field -> firstName, lastName, email, phoneNumber and password")
 	}
@@ -60,7 +57,7 @@ func (s *UserService) CreateUser(user entities.User) error {
 	return nil
 }
 
-func (s *UserService) GetUserById(id uuid.UUID) (*entities.User, error) {
+func (s *userUsecase) GetUserById(id uuid.UUID) (*entities.User, error) {
 	user, err := s.repo.GetById(id)
 	if err != nil {
 		return nil, err
@@ -69,7 +66,7 @@ func (s *UserService) GetUserById(id uuid.UUID) (*entities.User, error) {
 	return user, nil
 }
 
-func (s *UserService) GetAllUsers() ([]entities.User, error) {
+func (s *userUsecase) GetAllUsers() ([]entities.User, error) {
 	users, err := s.repo.GetAll()
 	if err != nil {
 		return nil, err
@@ -78,7 +75,7 @@ func (s *UserService) GetAllUsers() ([]entities.User, error) {
 	return users, nil
 }
 
-func (s *UserService) UpdateUser(user entities.User) error {
+func (s *userUsecase) UpdateUser(user entities.User) error {
 	if user.Email != "" {
 		Exists, err := s.repo.IsEmailExistsForUpdate(user.Email, user.ID)
 		if err != nil {
@@ -109,7 +106,7 @@ func (s *UserService) UpdateUser(user entities.User) error {
 	return nil
 }
 
-func (s *UserService) DeleteUser(id uuid.UUID) error {
+func (s *userUsecase) DeleteUser(id uuid.UUID) error {
 	err := s.repo.Delete(id)
 	if err != nil {
 		return err
@@ -118,22 +115,22 @@ func (s *UserService) DeleteUser(id uuid.UUID) error {
 	return nil
 }
 
-func (s UserService) Login(email, password string) (*entities.User, string, error) {
-	user, err := s.repo.GetUserByEmail(email)
-	if err != nil {
-		return nil, "", fmt.Errorf("email or password Incorrect")
-	}
+// func (s UserUsecase) Login(email, password string) (*entities.User, string, error) {
+// 	user, err := s.repo.GetUserByEmail(email)
+// 	if err != nil {
+// 		return nil, "", fmt.Errorf("email or password Incorrect")
+// 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		return nil, "", fmt.Errorf("email or password Incorrect")
-	}
+// 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+// 	if err != nil {
+// 		return nil, "", fmt.Errorf("email or password Incorrect")
+// 	}
 
-	token, err := pkg.GenerateToken(*user)
-	if err != nil {
-		return nil, "", fmt.Errorf("could not generate token: %v", err)
-	}
+// 	token, err := auth.GenerateToken(*user)
+// 	if err != nil {
+// 		return nil, "", fmt.Errorf("could not generate token: %v", err)
+// 	}
 
-	return user, token, nil
+// 	return user, token, nil
 
-}
+// }

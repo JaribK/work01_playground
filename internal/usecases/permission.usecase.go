@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type PermissionUseCase interface {
+type PermissionUsecase interface {
 	CreatePermission(permission entities.Permission) error
 	GetPermissionById(id uuid.UUID) (*entities.Permission, error)
 	GetAllPermissions() ([]entities.Permission, error)
@@ -15,15 +15,15 @@ type PermissionUseCase interface {
 	DeletePermission(id uuid.UUID) error
 }
 
-type PermissionService struct {
+type permissionUsecase struct {
 	repo repositories.PermissionRepository
 }
 
-func NewPermissionService(repo repositories.PermissionRepository) PermissionUseCase {
-	return &PermissionService{repo: repo}
+func NewPermissionUsecase(repo repositories.PermissionRepository) PermissionUsecase {
+	return &permissionUsecase{repo: repo}
 }
 
-func (s *PermissionService) CreatePermission(permission entities.Permission) error {
+func (s *permissionUsecase) CreatePermission(permission entities.Permission) error {
 	err := s.repo.Create(&permission)
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func (s *PermissionService) CreatePermission(permission entities.Permission) err
 	return nil
 }
 
-func (s *PermissionService) GetPermissionById(id uuid.UUID) (*entities.Permission, error) {
+func (s *permissionUsecase) GetPermissionById(id uuid.UUID) (*entities.Permission, error) {
 	permission, err := s.repo.GetById(id)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (s *PermissionService) GetPermissionById(id uuid.UUID) (*entities.Permissio
 	return permission, nil
 }
 
-func (s *PermissionService) GetAllPermissions() ([]entities.Permission, error) {
+func (s *permissionUsecase) GetAllPermissions() ([]entities.Permission, error) {
 	permissions, err := s.repo.GetAll()
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (s *PermissionService) GetAllPermissions() ([]entities.Permission, error) {
 	return permissions, nil
 }
 
-func (s *PermissionService) UpdatePermission(permission entities.Permission) error {
+func (s *permissionUsecase) UpdatePermission(permission entities.Permission) error {
 	err := s.repo.Update(&permission)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func (s *PermissionService) UpdatePermission(permission entities.Permission) err
 	return nil
 }
 
-func (s *PermissionService) DeletePermission(id uuid.UUID) error {
+func (s *permissionUsecase) DeletePermission(id uuid.UUID) error {
 	err := s.repo.Delete(id)
 	if err != nil {
 		return err

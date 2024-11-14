@@ -9,10 +9,10 @@ import (
 )
 
 type HttpRoleHandler struct {
-	roleUseCase usecases.RoleUseCase
+	roleUseCase usecases.RoleUsecase
 }
 
-func NewHttpRoleHandler(useCase usecases.RoleUseCase) *HttpRoleHandler {
+func NewHttpRoleHandler(useCase usecases.RoleUsecase) *HttpRoleHandler {
 	return &HttpRoleHandler{roleUseCase: useCase}
 }
 

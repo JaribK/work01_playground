@@ -9,10 +9,10 @@ import (
 )
 
 type HttpFeatureHandler struct {
-	featureUseCase usecases.FeatureUseCase
+	featureUseCase usecases.FeatureUsecase
 }
 
-func NewHttpFeatureHandler(useCase usecases.FeatureUseCase) *HttpFeatureHandler {
+func NewHttpFeatureHandler(useCase usecases.FeatureUsecase) *HttpFeatureHandler {
 	return &HttpFeatureHandler{featureUseCase: useCase}
 }
 
