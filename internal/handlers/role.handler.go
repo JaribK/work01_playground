@@ -24,7 +24,13 @@ func (h *HttpRoleHandler) CreateRoleHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	creBy, err := uuid.Parse(c.Locals("userId").(string))
+	if err != nil {
+		return err
+	}
+
 	role.ID = uuid.New()
+	role.CreatedBy = creBy
 	if err := h.roleUseCase.CreateRole(role); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -81,8 +87,13 @@ func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	role.ID = id
+	updBy, err := uuid.Parse(c.Locals("userId").(string))
+	if err != nil {
+		return err
+	}
 
+	role.ID = id
+	role.UpdatedBy = updBy
 	if err := h.roleUseCase.UpdateRole(role); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -103,7 +114,12 @@ func (h *HttpRoleHandler) DeleteRoleHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.roleUseCase.DeleteRole(id); err != nil {
+	delBy, err := uuid.Parse(c.Locals("userId").(string))
+	if err != nil {
+		return err
+	}
+
+	if err := h.roleUseCase.DeleteRole(id, delBy); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})

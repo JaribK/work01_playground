@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"work01/internal/auth"
 	"work01/internal/handlers"
 	"work01/internal/repositories"
 	"work01/internal/usecases"
@@ -51,20 +50,25 @@ func main() {
 		panic("failed connect to database")
 	}
 
-	// db.Migrator().DropTable(&entities.Role{}, &entities.Feature{}, &entities.User{}, &entities.Permission{}, &entities.RolePermission{})
-	// db.AutoMigrate(&entities.Role{}, &entities.Feature{}, &entities.User{}, &entities.Permission{}, &entities.RolePermission{})
+	// db.Migrator().DropTable(&entities.Role{}, &entities.Feature{}, &entities.User{}, &entities.Permission{}, &entities.RolePermission{}, &entities.Authorization{})
+	//db.AutoMigrate(&entities.Role{}, &entities.Feature{}, &entities.User{}, &entities.Permission{}, &entities.RolePermission{}, &entities.Authorization{})
 
 	app := fiber.New()
 
-	authRepo := auth.NewAuthRepository(db)
-	authUsecase := auth.NewAuthUsecase(authRepo)
-	authHandler := auth.NewHttpAuthHandler(authUsecase)
+	authRepo := repositories.NewAuthorizationRepository(db)
+	authUsecase := usecases.NewAuthorizationUsecase(authRepo)
+	authHandler := handlers.NewHttpAuthorizationHandler(authUsecase)
+
+	app.Get("/auths", authHandler.GetAllAuthorizationsHandler)
 
 	userRepo := repositories.NewUserRepository(db)
 	userUsecase := usecases.NewUserUsecase(userRepo)
 	userHandler := handlers.NewHttpUserHandler(userUsecase)
 
+	app.Post("/refresh", authHandler.RefreshToken)
 	app.Post("/login", authHandler.LoginHandler)
+	app.Use("/logout", pkg.TokenValidationMiddleware)
+	app.Post("/logout", authHandler.LogoutHandler)
 	app.Use("/users", pkg.TokenValidationMiddleware)
 	app.Get("/users/:id", userHandler.GetUserByIdHandler)
 	app.Get("/users", userHandler.GetAllUsersHandler)

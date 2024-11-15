@@ -13,7 +13,7 @@ type RoleUsecase interface {
 	GetRoleById(id uuid.UUID) (*entities.Role, error)
 	GetAllRoles() ([]entities.Role, error)
 	UpdateRole(role entities.Role) error
-	DeleteRole(id uuid.UUID) error
+	DeleteRole(id uuid.UUID, delBy uuid.UUID) error
 }
 
 type roleUsecase struct {
@@ -61,8 +61,8 @@ func (s *roleUsecase) UpdateRole(role entities.Role) error {
 	return nil
 }
 
-func (s *roleUsecase) DeleteRole(id uuid.UUID) error {
-	err := s.repo.Delete(id)
+func (s *roleUsecase) DeleteRole(id uuid.UUID, delBy uuid.UUID) error {
+	err := s.repo.Delete(id, delBy)
 	if err != nil {
 		return err
 	}

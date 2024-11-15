@@ -14,7 +14,7 @@ type UserUsecase interface {
 	GetUserById(id uuid.UUID) (*entities.User, error)
 	GetAllUsers() ([]entities.User, error)
 	UpdateUser(user entities.User) error
-	DeleteUser(id uuid.UUID) error
+	DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error
 	// Login(email, password string) (*entities.User, string, error)
 }
 
@@ -106,8 +106,8 @@ func (s *userUsecase) UpdateUser(user entities.User) error {
 	return nil
 }
 
-func (s *userUsecase) DeleteUser(id uuid.UUID) error {
-	err := s.repo.Delete(id)
+func (s *userUsecase) DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error {
+	err := s.repo.Delete(id, deleteBy)
 	if err != nil {
 		return err
 	}

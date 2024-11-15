@@ -23,7 +23,7 @@ func TokenValidationMiddleware(c *fiber.Ctx) error {
 	token, err := auth.ValidateToken(tokenString)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid token",
+			"error": err.Error(),
 		})
 	}
 

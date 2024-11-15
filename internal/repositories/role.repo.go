@@ -16,7 +16,7 @@ type RoleRepository interface {
 	GetAll() ([]entities.Role, error)
 	Create(role *entities.Role) error
 	Update(role *entities.Role) error
-	Delete(id uuid.UUID) error
+	Delete(id uuid.UUID, delBy uuid.UUID) error
 }
 
 func NewRoleRepository(db *gorm.DB) RoleRepository {
@@ -57,8 +57,15 @@ func (r *roleRepository) Update(role *entities.Role) error {
 	return nil
 }
 
-func (r *roleRepository) Delete(id uuid.UUID) error {
-	err := r.db.Delete(&entities.Role{}, id).Error
+func (r *roleRepository) Delete(id uuid.UUID, delBy uuid.UUID) error {
+	err := r.db.Model(&entities.Role{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"deleted_by": delBy,
+	}).Error
+	if err != nil {
+		return err
+	}
+
+	err = r.db.Delete(&entities.Role{}, id).Error
 	if err != nil {
 		return err
 	}

@@ -113,7 +113,12 @@ func (h *HttpUserHandler) DeleteUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.userUseCase.DeleteUser(id); err != nil {
+	delBy, err := uuid.Parse(c.Locals("userId").(string))
+	if err != nil {
+		return err
+	}
+
+	if err := h.userUseCase.DeleteUser(id, delBy); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})

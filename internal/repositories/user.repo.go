@@ -17,7 +17,7 @@ type UserRepository interface {
 	GetById(id uuid.UUID) (*entities.User, error)
 	GetAll() ([]entities.User, error)
 	Update(user *entities.User) error
-	Delete(id uuid.UUID) error
+	Delete(id uuid.UUID, deleteBy uuid.UUID) error
 	GetUserByEmail(email string) (*entities.User, error)
 	IsEmailExists(email string) (bool, error)
 	IsPhoneExists(phone string) (bool, error)
@@ -69,8 +69,15 @@ func (r *userRepository) Update(user *entities.User) error {
 	return nil
 }
 
-func (r *userRepository) Delete(id uuid.UUID,) error {
-	err := r.db.Delete(&entities.User{}, id).Error
+func (r *userRepository) Delete(id uuid.UUID, deleteBy uuid.UUID) error {
+	err := r.db.Model(&entities.User{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"deleted_by": deleteBy,
+	}).Error
+	if err != nil {
+		return err
+	}
+
+	err = r.db.Delete(&entities.User{}, id).Error
 	if err != nil {
 		return err
 	}
