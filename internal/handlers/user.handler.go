@@ -76,7 +76,10 @@ func (h *HttpUserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	users, err := h.userUseCase.GetAllUsers(page, size)
+	roleId := c.Query("roleId", "")
+	isActive := c.Query("isActive", "")
+
+	users, err := h.userUseCase.GetAllUsers(page, size, roleId, isActive)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

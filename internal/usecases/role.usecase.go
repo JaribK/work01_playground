@@ -3,6 +3,7 @@ package usecases
 import (
 	"fmt"
 	"work01/internal/entities"
+	"work01/internal/models"
 	"work01/internal/repositories"
 
 	"github.com/google/uuid"
@@ -11,7 +12,7 @@ import (
 type RoleUsecase interface {
 	CreateRole(role entities.Role) error
 	GetRoleById(id uuid.UUID) (*entities.Role, error)
-	GetAllRoles() ([]entities.Role, error)
+	GetAllRoles() (interface{}, error)
 	UpdateRole(role entities.Role) error
 	DeleteRole(id uuid.UUID, delBy uuid.UUID) error
 }
@@ -44,12 +45,21 @@ func (s *roleUsecase) GetRoleById(id uuid.UUID) (*entities.Role, error) {
 	return role, nil
 }
 
-func (s *roleUsecase) GetAllRoles() ([]entities.Role, error) {
+func (s *roleUsecase) GetAllRoles() (interface{}, error) {
 	roles, err := s.repo.GetAll()
 	if err != nil {
 		return nil, err
 	}
-	return roles, nil
+
+	var roleRes []interface{}
+	for _, role := range roles {
+		roleRes = append(roleRes, models.ResRole{
+			RoleID:   role.ID,
+			RoleName: role.Name,
+		})
+	}
+
+	return roleRes, nil
 }
 
 func (s *roleUsecase) UpdateRole(role entities.Role) error {

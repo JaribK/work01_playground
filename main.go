@@ -80,6 +80,7 @@ func main() {
 	roleUsecase := usecases.NewRoleUsecase(roleRepo)
 	roleHandler := handlers.NewHttpRoleHandler(roleUsecase)
 
+	app.Use("/roles", pkg.TokenValidationMiddleware)
 	app.Get("/roles/:id", roleHandler.GetRoleByIdHandler)
 	app.Get("/roles", roleHandler.GetAllRolesHandler)
 	app.Post("/roles", roleHandler.CreateRoleHandler)

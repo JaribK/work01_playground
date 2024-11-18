@@ -17,17 +17,17 @@ type ResAllUserDTOs struct {
 }
 
 type ResUserDTO struct {
-	UserID            uuid.UUID `json:"userId"`
-	Email             string    `json:"email"`
-	FirstName         string    `json:"firstName"`
-	LastName          string    `json:"lastName"`
-	PhoneNumber       string    `json:"phoneNumber"`
-	Avatar            string    `json:"avatar"`
-	RoleName          string    `json:"roleName"`
-	RoleLevel         int32     `json:"roleLevel"`
-	TwoFactorAuthUrl  string    `json:"twoFactorAuthUrl"`
-	TwoFactorEnabled  bool      `json:"twoFactorEnabled"`
-	TwoFactorToken    string    `json:"twoFactorToken"`
-	TwoFactorVerified bool      `json:"twoFactorVerified"`
-	Permissions       []entities.Permission
+	UserID            uuid.UUID             `json:"userId"`
+	Email             string                `json:"email"`
+	FirstName         string                `json:"firstName"`
+	LastName          string                `json:"lastName"`
+	PhoneNumber       string                `json:"phoneNumber"`
+	Avatar            string                `json:"avatar"`
+	RoleName          string                `json:"roleName"`
+	RoleLevel         int32                 `json:"roleLevel"`
+	TwoFactorEnabled  bool                  `json:"twoFactorEnabled"`
+	TwoFactorVerified bool                  `json:"twoFactorVerified"`
+	TwoFactorAuthUrl  string                `json:"twoFactorAuthUrl"`
+	TwoFactorToken    string                `json:"twoFactorToken"`
+	Permissions       []entities.Permission `json:"permissions"`
 }

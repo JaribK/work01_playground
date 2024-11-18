@@ -14,7 +14,7 @@ import (
 type UserUsecase interface {
 	CreateUser(user entities.User) error
 	GetUserById(id uuid.UUID) (interface{}, error)
-	GetAllUsers(page, size int) (models.Pagination, error)
+	GetAllUsers(page, size int, roleId, isActive string) (models.Pagination, error)
 	UpdateUser(user entities.User) error
 	DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error
 	// Login(email, password string) (*entities.User, string, error)
@@ -85,8 +85,8 @@ func (s *userUsecase) GetUserById(id uuid.UUID) (interface{}, error) {
 	return userDTO, nil
 }
 
-func (s *userUsecase) GetAllUsers(page, size int) (models.Pagination, error) {
-	users, total, err := s.repo.GetAll(page, size)
+func (s *userUsecase) GetAllUsers(page, size int, roleId, isActive string) (models.Pagination, error) {
+	users, total, err := s.repo.GetAll(page, size, roleId, isActive)
 	if err != nil {
 		return models.Pagination{}, err
 	}

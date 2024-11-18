@@ -15,7 +15,7 @@ type userRepository struct {
 type UserRepository interface {
 	Create(user *entities.User) error
 	GetById(id uuid.UUID) (*entities.User, error)
-	GetAll(page, size int) ([]entities.User, int64, error)
+	GetAll(page, size int, roleId, isActive string) ([]entities.User, int64, error)
 	Update(user *entities.User) error
 	Delete(id uuid.UUID, deleteBy uuid.UUID) error
 	GetUserByEmail(email string) (*entities.User, error)
@@ -52,7 +52,7 @@ func (r *userRepository) GetById(id uuid.UUID) (*entities.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) GetAll(page, size int) ([]entities.User, int64, error) {
+func (r *userRepository) GetAll(page, size int, roleId, isActive string) ([]entities.User, int64, error) {
 	var users []entities.User
 	var total int64
 
@@ -62,7 +62,16 @@ func (r *userRepository) GetAll(page, size int) ([]entities.User, int64, error) 
 		return nil, 0, err
 	}
 
-	err = r.db.Preload("Role").Limit(size).Offset(offset).Find(&users).Error
+	query := r.db.Model(&entities.User{}).Preload("Role")
+	if roleId != "" {
+		query = query.Joins("JOIN roles ON roles.id = users.role_id").Where("roles.id = ?", roleId)
+	}
+
+	if isActive != "" {
+		query = query.Where("users.is_active = ?", isActive)
+	}
+
+	err = query.Limit(size).Offset(offset).Find(&users).Error
 	if err != nil {
 		return nil, 0, err
 	}
