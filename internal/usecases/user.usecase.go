@@ -76,14 +76,14 @@ func (s *userUsecase) GetAllUsers(page, size int) (models.Pagination, error) {
 
 	var userDTOs []interface{}
 	for _, user := range users {
-		userDTOs = append(userDTOs, map[string]interface{}{
-			"userId":      user.ID,
-			"email":       user.Email,
-			"fullName":    user.FirstName + " " + user.LastName,
-			"phoneNumber": user.PhoneNumber,
-			"isActive":    user.IsActive,
-			"avatar":      user.Avatar,
-			"roleName":    user.Role.Name,
+		userDTOs = append(userDTOs, models.UserDTO{
+			UserID:      user.ID.String(),
+			Email:       user.Email,
+			FullName:    user.FirstName + " " + user.LastName,
+			PhoneNumber: user.PhoneNumber,
+			IsActive:    user.IsActive,
+			Avatar:      user.Avatar,
+			RoleName:    user.Role.Name,
 		})
 	}
 
