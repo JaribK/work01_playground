@@ -15,7 +15,7 @@ type userRepository struct {
 type UserRepository interface {
 	Create(user *entities.User) error
 	GetById(id uuid.UUID) (*entities.User, error)
-	GetAll() ([]entities.User, error)
+	GetAll(page, size int) ([]entities.User, int64, error)
 	Update(user *entities.User) error
 	Delete(id uuid.UUID, deleteBy uuid.UUID) error
 	GetUserByEmail(email string) (*entities.User, error)
@@ -52,13 +52,22 @@ func (r *userRepository) GetById(id uuid.UUID) (*entities.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) GetAll() ([]entities.User, error) {
+func (r *userRepository) GetAll(page, size int) ([]entities.User, int64, error) {
 	var users []entities.User
-	err := r.db.Find(&users).Error
+	var total int64
+
+	offset := (page - 1) * size
+	err := r.db.Model(&entities.User{}).Count(&total).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return users, nil
+
+	err = r.db.Preload("Role").Limit(size).Offset(offset).Find(&users).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
 }
 
 func (r *userRepository) Update(user *entities.User) error {

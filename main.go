@@ -69,7 +69,7 @@ func main() {
 	app.Post("/login", authHandler.LoginHandler)
 	app.Use("/logout", pkg.TokenValidationMiddleware)
 	app.Post("/logout", authHandler.LogoutHandler)
-	app.Use("/users", pkg.TokenValidationMiddleware)
+	// app.Use("/users", pkg.TokenValidationMiddleware)
 	app.Get("/users/:id", userHandler.GetUserByIdHandler)
 	app.Get("/users", userHandler.GetAllUsersHandler)
 	app.Post("/users", userHandler.CreateUserHandler)

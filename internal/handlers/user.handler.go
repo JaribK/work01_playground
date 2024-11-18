@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"strconv"
 	"work01/internal/entities"
 	"work01/internal/usecases"
 
@@ -61,14 +62,28 @@ func (h *HttpUserHandler) GetUserByIdHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpUserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
-	users, err := h.userUseCase.GetAllUsers()
+	page, err := strconv.Atoi(c.Query("page", "1"))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to fetch users.",
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
 		})
 	}
 
-	return c.JSON(users)
+	size, err := strconv.Atoi(c.Query("size", "10"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	users, err := h.userUseCase.GetAllUsers(page, size)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(users)
 }
 
 func (h *HttpUserHandler) UpdateUserHandler(c *fiber.Ctx) error {

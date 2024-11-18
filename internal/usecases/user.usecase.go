@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"work01/internal/entities"
+	"work01/internal/helpers"
+	"work01/internal/models"
 	"work01/internal/repositories"
 
 	"github.com/google/uuid"
@@ -12,7 +14,7 @@ import (
 type UserUsecase interface {
 	CreateUser(user entities.User) error
 	GetUserById(id uuid.UUID) (*entities.User, error)
-	GetAllUsers() ([]entities.User, error)
+	GetAllUsers(page, size int) (models.Pagination, error)
 	UpdateUser(user entities.User) error
 	DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error
 	// Login(email, password string) (*entities.User, string, error)
@@ -66,13 +68,26 @@ func (s *userUsecase) GetUserById(id uuid.UUID) (*entities.User, error) {
 	return user, nil
 }
 
-func (s *userUsecase) GetAllUsers() ([]entities.User, error) {
-	users, err := s.repo.GetAll()
+func (s *userUsecase) GetAllUsers(page, size int) (models.Pagination, error) {
+	users, total, err := s.repo.GetAll(page, size)
 	if err != nil {
-		return nil, err
+		return models.Pagination{}, err
 	}
 
-	return users, nil
+	var userDTOs []interface{}
+	for _, user := range users {
+		userDTOs = append(userDTOs, map[string]interface{}{
+			"userId":      user.ID,
+			"email":       user.Email,
+			"fullName":    user.FirstName + " " + user.LastName,
+			"phoneNumber": user.PhoneNumber,
+			"isActive":    user.IsActive,
+			"avatar":      user.Avatar,
+			"roleName":    user.Role.Name,
+		})
+	}
+
+	return helpers.Pagiante(page, size, total, userDTOs), nil
 }
 
 func (s *userUsecase) UpdateUser(user entities.User) error {
