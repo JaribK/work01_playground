@@ -33,7 +33,7 @@ func (r *permissionRepository) Create(permission *entities.Permission) error {
 
 func (r *permissionRepository) GetById(id uuid.UUID) (*entities.Permission, error) {
 	var permission entities.Permission
-	err := r.db.First(&permission, id).Error
+	err := r.db.Preload("Feature").First(&permission, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (r *permissionRepository) GetById(id uuid.UUID) (*entities.Permission, erro
 
 func (r *permissionRepository) GetAll() ([]entities.Permission, error) {
 	var permissions []entities.Permission
-	err := r.db.Find(&permissions).Error
+	err := r.db.Preload("Feature").Find(&permissions).Error
 	if err != nil {
 		return nil, err
 	}

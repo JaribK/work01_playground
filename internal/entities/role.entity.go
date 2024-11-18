@@ -17,7 +17,7 @@ type Role struct {
 	UpdatedBy   uuid.UUID      `json:"updatedBy" gorm:"type:uuid"`
 	DeletedAt   gorm.DeletedAt `json:"-"`
 	DeletedBy   *uuid.UUID     `json:"-" gorm:"type:uuid;index;"`
-	Permissions []Permission   `gorm:"many2many:role_permissions;"`
+	Permissions []Permission   `json:"permissions" gorm:"many2many:role_permissions;"`
 }
 
 type RolePermission struct {

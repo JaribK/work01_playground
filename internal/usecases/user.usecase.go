@@ -13,7 +13,7 @@ import (
 
 type UserUsecase interface {
 	CreateUser(user entities.User) error
-	GetUserById(id uuid.UUID) (*entities.User, error)
+	GetUserById(id uuid.UUID) (interface{}, error)
 	GetAllUsers(page, size int) (models.Pagination, error)
 	UpdateUser(user entities.User) error
 	DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error
@@ -59,13 +59,30 @@ func (s *userUsecase) CreateUser(user entities.User) error {
 	return nil
 }
 
-func (s *userUsecase) GetUserById(id uuid.UUID) (*entities.User, error) {
+func (s *userUsecase) GetUserById(id uuid.UUID) (interface{}, error) {
 	user, err := s.repo.GetById(id)
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	var userDTO []interface{}
+	userDTO = append(userDTO, models.ResUserDTO{
+		UserID:            user.ID,
+		Email:             user.Email,
+		FirstName:         user.FirstName,
+		LastName:          user.LastName,
+		PhoneNumber:       user.PhoneNumber,
+		Avatar:            user.Avatar,
+		RoleName:          user.Role.Name,
+		RoleLevel:         user.Role.Level,
+		TwoFactorAuthUrl:  user.TwoFactorAuthUrl,
+		TwoFactorEnabled:  user.TwoFactorEnabled,
+		TwoFactorToken:    user.TwoFactorToken,
+		TwoFactorVerified: user.TwoFactorVerified,
+		Permissions:       user.Role.Permissions,
+	})
+
+	return userDTO, nil
 }
 
 func (s *userUsecase) GetAllUsers(page, size int) (models.Pagination, error) {
@@ -76,8 +93,8 @@ func (s *userUsecase) GetAllUsers(page, size int) (models.Pagination, error) {
 
 	var userDTOs []interface{}
 	for _, user := range users {
-		userDTOs = append(userDTOs, models.UserDTO{
-			UserID:      user.ID.String(),
+		userDTOs = append(userDTOs, models.ResAllUserDTOs{
+			UserID:      user.ID,
 			Email:       user.Email,
 			FullName:    user.FirstName + " " + user.LastName,
 			PhoneNumber: user.PhoneNumber,

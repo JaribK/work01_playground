@@ -45,7 +45,7 @@ func (r *userRepository) Create(user *entities.User) error {
 
 func (r *userRepository) GetById(id uuid.UUID) (*entities.User, error) {
 	var user entities.User
-	err := r.db.Where("id=?", id).First(&user).Error
+	err := r.db.Preload("Role.Permissions.Feature").Where("id=?", id).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
