@@ -13,6 +13,7 @@ type RoleUsecase interface {
 	CreateRole(role entities.Role) error
 	GetRoleById(id uuid.UUID) (*entities.Role, error)
 	GetAllRoles() (interface{}, error)
+	GetAllRolesDropdown() (interface{}, error)
 	UpdateRole(role entities.Role) error
 	DeleteRole(id uuid.UUID, delBy uuid.UUID) error
 }
@@ -53,7 +54,26 @@ func (s *roleUsecase) GetAllRoles() (interface{}, error) {
 
 	var roleRes []interface{}
 	for _, role := range roles {
-		roleRes = append(roleRes, models.ResRole{
+		roleRes = append(roleRes, models.ResRoleDetails{
+			RoleID:     role.ID,
+			RoleName:   role.Name,
+			RoleLevel:  role.Level,
+			NumberUser: int32(len(role.Users)),
+		})
+	}
+
+	return roleRes, nil
+}
+
+func (s *roleUsecase) GetAllRolesDropdown() (interface{}, error) {
+	roles, err := s.repo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var roleRes []interface{}
+	for _, role := range roles {
+		roleRes = append(roleRes, models.ResRoleDropDown{
 			RoleID:   role.ID,
 			RoleName: role.Name,
 		})

@@ -34,7 +34,8 @@ func (r *roleRepository) GetById(id uuid.UUID) (*entities.Role, error) {
 
 func (r *roleRepository) GetAll() ([]entities.Role, error) {
 	var roleOjbs []entities.Role
-	err := r.db.Preload("Permissions").Find(&roleOjbs).Error
+
+	err := r.db.Preload("Permissions").Preload("Users").Find(&roleOjbs).Error
 	if err != nil {
 		return nil, err
 	}

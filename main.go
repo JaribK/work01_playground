@@ -83,6 +83,7 @@ func main() {
 	app.Use("/roles", pkg.TokenValidationMiddleware)
 	app.Get("/roles/:id", roleHandler.GetRoleByIdHandler)
 	app.Get("/roles", roleHandler.GetAllRolesHandler)
+	app.Get("/rolesdropdown", roleHandler.GetAllRolesDropdownHandler)
 	app.Post("/roles", roleHandler.CreateRoleHandler)
 	app.Put("/roles/:id", roleHandler.UpdateRoleHandler)
 	app.Delete("/roles/:id", roleHandler.DeleteRoleHandler)

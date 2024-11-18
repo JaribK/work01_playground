@@ -72,6 +72,17 @@ func (h *HttpRoleHandler) GetAllRolesHandler(c *fiber.Ctx) error {
 	return c.JSON(roles)
 }
 
+func (h *HttpRoleHandler) GetAllRolesDropdownHandler(c *fiber.Ctx) error {
+	roles, err := h.roleUseCase.GetAllRolesDropdown()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Unable to fetch roles.",
+		})
+	}
+
+	return c.JSON(roles)
+}
+
 func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
