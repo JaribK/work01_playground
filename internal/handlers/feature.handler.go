@@ -38,6 +38,7 @@ func (h *HttpFeatureHandler) CreateFeatureHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpFeatureHandler) GetFeatureByIdHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -45,7 +46,7 @@ func (h *HttpFeatureHandler) GetFeatureByIdHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	feature, err := h.featureUseCase.GetFeatureById(id)
+	feature, err := h.featureUseCase.GetFeatureById(ctx, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "feature not found.",
@@ -56,7 +57,8 @@ func (h *HttpFeatureHandler) GetFeatureByIdHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpFeatureHandler) GetAllFeaturesHandler(c *fiber.Ctx) error {
-	features, err := h.featureUseCase.GetAllFeatures()
+	ctx := c.Context()
+	features, err := h.featureUseCase.GetAllFeatures(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Unable to fetch features.",

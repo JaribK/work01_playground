@@ -33,18 +33,18 @@ func main() {
 	app.Post("/auth/refresh", authHandler.RefreshToken)
 	app.Post("/auth/login", authHandler.LoginHandler)
 	app.Post("/auth/logout", authHandler.LogoutHandler)
-	// app.Use("/users", pkg.TokenValidationMiddleware)
-	app.Get("/users/:id", userHandler.GetUserByIdHandler)
+	app.Use("/users", pkg.TokenValidationMiddleware)
+	app.Get("/users/me", userHandler.GetUserByIdHandler)
 	app.Get("/users", userHandler.GetAllUsersHandler)
 	app.Post("/users", userHandler.CreateUserHandler)
 	app.Put("/users/:id", userHandler.UpdateUserHandler)
 	app.Delete("/users/:id", userHandler.DeleteUserHandler)
 
-	roleRepo := repositories.NewRoleRepository(dbServer)
+	roleRepo := repositories.NewRoleRepository(dbServer, redisClient)
 	roleUsecase := usecases.NewRoleUsecase(roleRepo)
 	roleHandler := handlers.NewHttpRoleHandler(roleUsecase)
 
-	app.Use("/roles", pkg.TokenValidationMiddleware)
+	// app.Use("/roles", pkg.TokenValidationMiddleware)
 	app.Get("/roles/:id", roleHandler.GetRoleByIdHandler)
 	app.Get("/roles", roleHandler.GetAllRolesHandler)
 	app.Get("/rolesdropdown", roleHandler.GetAllRolesDropdownHandler)
@@ -52,7 +52,7 @@ func main() {
 	app.Put("/roles/:id", roleHandler.UpdateRoleHandler)
 	app.Delete("/roles/:id", roleHandler.DeleteRoleHandler)
 
-	featureRepo := repositories.NewFeatureRepository(dbServer)
+	featureRepo := repositories.NewFeatureRepository(dbServer, redisClient)
 	featureUsecase := usecases.NewFeatureUsecase(featureRepo)
 	featureHandler := handlers.NewHttpFeatureHandler(featureUsecase)
 
@@ -62,7 +62,7 @@ func main() {
 	app.Put("/features/:id", featureHandler.UpdateFeatureHandler)
 	app.Delete("/features/:id", featureHandler.DeleteFeatureHandler)
 
-	permissionRepo := repositories.NewPermissionRepository(dbServer)
+	permissionRepo := repositories.NewPermissionRepository(dbServer, redisClient)
 	permissionUsecase := usecases.NewPermissionUsecase(permissionRepo)
 	permissionHandler := handlers.NewHttpPermissionHandler(permissionUsecase)
 
@@ -72,7 +72,7 @@ func main() {
 	app.Put("/permissions/:id", permissionHandler.UpdatePermissionHandler)
 	app.Delete("/permissions/:id", permissionHandler.DeletePermissionHandler)
 
-	rolePermissionRepo := repositories.NewRolePermissionRepository(dbServer)
+	rolePermissionRepo := repositories.NewRolePermissionRepository(dbServer, redisClient)
 	rolePermissionUsecase := usecases.NewRolePermissionUsecase(rolePermissionRepo)
 	rolePermissionHandler := handlers.NewHttpRolePermissionHandler(rolePermissionUsecase)
 

@@ -38,6 +38,7 @@ func (h *HttpRolePermissionHandler) CreateRolePermissionHandler(c *fiber.Ctx) er
 }
 
 func (h *HttpRolePermissionHandler) GetRolePermissionByIdHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -45,7 +46,7 @@ func (h *HttpRolePermissionHandler) GetRolePermissionByIdHandler(c *fiber.Ctx) e
 		})
 	}
 
-	rolePermission, err := h.rolePermissionUseCase.GetRolePermissionById(id)
+	rolePermission, err := h.rolePermissionUseCase.GetRolePermissionById(ctx, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "role not found.",
@@ -56,7 +57,8 @@ func (h *HttpRolePermissionHandler) GetRolePermissionByIdHandler(c *fiber.Ctx) e
 }
 
 func (h *HttpRolePermissionHandler) GetAllRolePermissionsHandler(c *fiber.Ctx) error {
-	rolePermissions, err := h.rolePermissionUseCase.GetAllRolePermissions()
+	ctx := c.Context()
+	rolePermissions, err := h.rolePermissionUseCase.GetAllRolePermissions(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Unable to fetch roles.",

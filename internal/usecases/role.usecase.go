@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"fmt"
 	"work01/internal/entities"
 	"work01/internal/models"
@@ -11,9 +12,9 @@ import (
 
 type RoleUsecase interface {
 	CreateRole(role entities.Role) error
-	GetRoleById(id uuid.UUID) (*entities.Role, error)
-	GetAllRoles() (interface{}, error)
-	GetAllRolesDropdown() (interface{}, error)
+	GetRoleById(ctx context.Context, id uuid.UUID) (*entities.Role, error)
+	GetAllRoles(ctx context.Context) (interface{}, error)
+	GetAllRolesDropdown(ctx context.Context) (interface{}, error)
 	UpdateRole(role entities.Role) error
 	DeleteRole(id uuid.UUID, delBy uuid.UUID) error
 }
@@ -37,8 +38,8 @@ func (s *roleUsecase) CreateRole(role entities.Role) error {
 	return nil
 }
 
-func (s *roleUsecase) GetRoleById(id uuid.UUID) (*entities.Role, error) {
-	role, err := s.repo.GetById(id)
+func (s *roleUsecase) GetRoleById(ctx context.Context, id uuid.UUID) (*entities.Role, error) {
+	role, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +47,8 @@ func (s *roleUsecase) GetRoleById(id uuid.UUID) (*entities.Role, error) {
 	return role, nil
 }
 
-func (s *roleUsecase) GetAllRoles() (interface{}, error) {
-	roles, err := s.repo.GetAll()
+func (s *roleUsecase) GetAllRoles(ctx context.Context) (interface{}, error) {
+	roles, err := s.repo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +66,8 @@ func (s *roleUsecase) GetAllRoles() (interface{}, error) {
 	return roleRes, nil
 }
 
-func (s *roleUsecase) GetAllRolesDropdown() (interface{}, error) {
-	roles, err := s.repo.GetAll()
+func (s *roleUsecase) GetAllRolesDropdown(ctx context.Context) (interface{}, error) {
+	roles, err := s.repo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -44,14 +44,15 @@ func (h *HttpUserHandler) CreateUserHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpUserHandler) GetUserByIdHandler(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+	ctx := c.Context()
+	id, err := uuid.Parse(c.Locals("userId").(string))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid ID.",
 		})
 	}
 
-	role, err := h.userUseCase.GetUserById(id)
+	role, err := h.userUseCase.GetUserById(ctx, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "user not found.",

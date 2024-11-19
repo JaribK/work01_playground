@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"work01/internal/entities"
 	"work01/internal/repositories"
 
@@ -9,8 +10,8 @@ import (
 
 type PermissionUsecase interface {
 	CreatePermission(permission entities.Permission) error
-	GetPermissionById(id uuid.UUID) (*entities.Permission, error)
-	GetAllPermissions() ([]entities.Permission, error)
+	GetPermissionById(ctx context.Context, id uuid.UUID) (*entities.Permission, error)
+	GetAllPermissions(ctx context.Context) ([]entities.Permission, error)
 	UpdatePermission(permission entities.Permission) error
 	DeletePermission(id uuid.UUID) error
 }
@@ -31,8 +32,8 @@ func (s *permissionUsecase) CreatePermission(permission entities.Permission) err
 	return nil
 }
 
-func (s *permissionUsecase) GetPermissionById(id uuid.UUID) (*entities.Permission, error) {
-	permission, err := s.repo.GetById(id)
+func (s *permissionUsecase) GetPermissionById(ctx context.Context, id uuid.UUID) (*entities.Permission, error) {
+	permission, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +41,8 @@ func (s *permissionUsecase) GetPermissionById(id uuid.UUID) (*entities.Permissio
 	return permission, nil
 }
 
-func (s *permissionUsecase) GetAllPermissions() ([]entities.Permission, error) {
-	permissions, err := s.repo.GetAll()
+func (s *permissionUsecase) GetAllPermissions(ctx context.Context) ([]entities.Permission, error) {
+	permissions, err := s.repo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}

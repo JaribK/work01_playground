@@ -44,6 +44,7 @@ func (h *HttpRoleHandler) CreateRoleHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpRoleHandler) GetRoleByIdHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -51,7 +52,7 @@ func (h *HttpRoleHandler) GetRoleByIdHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	role, err := h.roleUseCase.GetRoleById(id)
+	role, err := h.roleUseCase.GetRoleById(ctx, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "role not found.",
@@ -62,7 +63,8 @@ func (h *HttpRoleHandler) GetRoleByIdHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpRoleHandler) GetAllRolesHandler(c *fiber.Ctx) error {
-	roles, err := h.roleUseCase.GetAllRoles()
+	ctx := c.Context()
+	roles, err := h.roleUseCase.GetAllRoles(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Unable to fetch roles.",
@@ -73,7 +75,8 @@ func (h *HttpRoleHandler) GetAllRolesHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpRoleHandler) GetAllRolesDropdownHandler(c *fiber.Ctx) error {
-	roles, err := h.roleUseCase.GetAllRolesDropdown()
+	ctx := c.Context()
+	roles, err := h.roleUseCase.GetAllRolesDropdown(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Unable to fetch roles.",

@@ -1,44 +1,91 @@
 package repositories
 
 import (
+	"context"
+	"fmt"
+	"time"
 	"work01/internal/entities"
 
+	"github.com/go-redis/cache/v9"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type roleRepository struct {
-	db *gorm.DB
+	db         *gorm.DB
+	redisCache *cache.Cache
 }
 
 type RoleRepository interface {
-	GetById(id uuid.UUID) (*entities.Role, error)
-	GetAll() ([]entities.Role, error)
+	GetById(ctx context.Context, id uuid.UUID) (*entities.Role, error)
+	GetAll(ctx context.Context) ([]entities.Role, error)
 	Create(role *entities.Role) error
 	Update(role *entities.Role) error
 	Delete(id uuid.UUID, delBy uuid.UUID) error
 }
 
-func NewRoleRepository(db *gorm.DB) RoleRepository {
-	return &roleRepository{db: db}
+func NewRoleRepository(db *gorm.DB, redisClient *redis.Client) RoleRepository {
+	c := cache.New(&cache.Options{
+		Redis:      redisClient,
+		LocalCache: cache.NewTinyLFU(1000, time.Minute),
+	})
+	return &roleRepository{db: db, redisCache: c}
 }
 
-func (r *roleRepository) GetById(id uuid.UUID) (*entities.Role, error) {
+func (r *roleRepository) GetById(ctx context.Context, id uuid.UUID) (*entities.Role, error) {
 	var roleOjb entities.Role
+
+	cacheKey := fmt.Sprintf("role:%s", id)
+
+	if err := r.redisCache.Get(ctx, cacheKey, &roleOjb); err == nil {
+		return &roleOjb, nil
+	}
+
 	err := r.db.First(&roleOjb, id).Error
 	if err != nil {
 		return nil, err
 	}
+
+	err = r.redisCache.Set(&cache.Item{
+		Ctx:   ctx,
+		Key:   cacheKey,
+		Value: roleOjb,
+		TTL:   time.Minute * 10,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &roleOjb, nil
 }
 
-func (r *roleRepository) GetAll() ([]entities.Role, error) {
+func (r *roleRepository) GetAll(ctx context.Context) ([]entities.Role, error) {
 	var roleOjbs []entities.Role
+
+	cacheKey := fmt.Sprintln("roles_list")
+
+	if err := r.redisCache.Get(ctx, cacheKey, &roleOjbs); err == nil {
+		return roleOjbs, nil
+	}
 
 	err := r.db.Preload("Permissions").Preload("Users").Find(&roleOjbs).Error
 	if err != nil {
 		return nil, err
 	}
+
+	err = r.redisCache.Set(&cache.Item{
+		Ctx:   ctx,
+		Key:   cacheKey,
+		Value: roleOjbs,
+		TTL:   time.Minute * 10,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	return roleOjbs, nil
 }
 

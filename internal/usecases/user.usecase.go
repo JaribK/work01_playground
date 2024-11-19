@@ -14,7 +14,7 @@ import (
 
 type UserUsecase interface {
 	CreateUser(user entities.User) error
-	GetUserById(id uuid.UUID) (interface{}, error)
+	GetUserById(ctx context.Context, id uuid.UUID) (interface{}, error)
 	GetAllUsers(ctx context.Context, page, size int, roleId, isActive string) (models.Pagination, error)
 	UpdateUser(user entities.User) error
 	DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error
@@ -60,8 +60,8 @@ func (s *userUsecase) CreateUser(user entities.User) error {
 	return nil
 }
 
-func (s *userUsecase) GetUserById(id uuid.UUID) (interface{}, error) {
-	user, err := s.repo.GetById(id)
+func (s *userUsecase) GetUserById(ctx context.Context, id uuid.UUID) (interface{}, error) {
+	user, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"work01/internal/entities"
 	"work01/internal/repositories"
 
@@ -9,8 +10,8 @@ import (
 
 type RolePermissionUsecase interface {
 	CreateRolePermission(rolePermission entities.RolePermission) error
-	GetRolePermissionById(id uuid.UUID) (*entities.RolePermission, error)
-	GetAllRolePermissions() ([]entities.RolePermission, error)
+	GetRolePermissionById(ctx context.Context, id uuid.UUID) (*entities.RolePermission, error)
+	GetAllRolePermissions(ctx context.Context) ([]entities.RolePermission, error)
 	UpdateRolePermission(rolePermission entities.RolePermission) error
 	DeleteRolePermission(id uuid.UUID) error
 }
@@ -31,8 +32,8 @@ func (s *rolePermissionUsecase) CreateRolePermission(rolePermission entities.Rol
 	return nil
 }
 
-func (s *rolePermissionUsecase) GetRolePermissionById(id uuid.UUID) (*entities.RolePermission, error) {
-	rolePermission, err := s.repo.GetById(id)
+func (s *rolePermissionUsecase) GetRolePermissionById(ctx context.Context, id uuid.UUID) (*entities.RolePermission, error) {
+	rolePermission, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +41,8 @@ func (s *rolePermissionUsecase) GetRolePermissionById(id uuid.UUID) (*entities.R
 	return rolePermission, nil
 }
 
-func (s *rolePermissionUsecase) GetAllRolePermissions() ([]entities.RolePermission, error) {
-	rolePermissions, err := s.repo.GetAll()
+func (s *rolePermissionUsecase) GetAllRolePermissions(ctx context.Context) ([]entities.RolePermission, error) {
+	rolePermissions, err := s.repo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}

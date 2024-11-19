@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 	"work01/internal/entities"
@@ -20,7 +21,7 @@ type userRepository struct {
 
 type UserRepository interface {
 	Create(user *entities.User) error
-	GetById(id uuid.UUID) (*entities.User, error)
+	GetById(ctx context.Context, id uuid.UUID) (*entities.User, error)
 	GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]entities.User, int64, error)
 	Update(user *entities.User) error
 	Delete(id uuid.UUID, deleteBy uuid.UUID) error
@@ -53,12 +54,26 @@ func (r *userRepository) Create(user *entities.User) error {
 	return nil
 }
 
-func (r *userRepository) GetById(id uuid.UUID) (*entities.User, error) {
+func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*entities.User, error) {
 	var user entities.User
+
+	cacheKey := fmt.Sprintf("user:%s", id)
+	if err := r.redisCache.Get(ctx, cacheKey, &user); err == nil {
+		return &user, nil
+	}
+
 	err := r.db.Preload("Role.Permissions.Feature").Where("id=?", id).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
+
+	_ = r.redisCache.Set(&cache.Item{
+		Ctx:   ctx,
+		Key:   cacheKey,
+		Value: user,
+		TTL:   time.Minute * 10,
+	})
+
 	return &user, nil
 }
 
@@ -66,7 +81,7 @@ func (r *userRepository) GetAll(ctx context.Context, page, size int, roleId, isA
 	var users []entities.User
 	var total int64
 
-	cacheKey := "usertest"
+	cacheKey := fmt.Sprintf("users:page:%d:size:%d:role:%s:isActive:%s", page, size, roleId, isActive)
 
 	if err := r.redisCache.Get(ctx, cacheKey, &users); err == nil {
 		return users, total, nil

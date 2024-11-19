@@ -38,6 +38,7 @@ func (h *HttpPermissionHandler) CreatePermissionHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpPermissionHandler) GetPermissionByIdHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -45,7 +46,7 @@ func (h *HttpPermissionHandler) GetPermissionByIdHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	permission, err := h.permissionUseCase.GetPermissionById(id)
+	permission, err := h.permissionUseCase.GetPermissionById(ctx, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "permission not found.",
@@ -56,7 +57,8 @@ func (h *HttpPermissionHandler) GetPermissionByIdHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpPermissionHandler) GetAllPermissionsHandler(c *fiber.Ctx) error {
-	permissions, err := h.permissionUseCase.GetAllPermissions()
+	ctx := c.Context()
+	permissions, err := h.permissionUseCase.GetAllPermissions(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Unable to fetch permissions.",

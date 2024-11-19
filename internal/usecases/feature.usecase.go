@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"work01/internal/entities"
 	"work01/internal/repositories"
 
@@ -9,8 +10,8 @@ import (
 
 type FeatureUsecase interface {
 	CreateFeature(feature entities.Feature) error
-	GetFeatureById(id uuid.UUID) (*entities.Feature, error)
-	GetAllFeatures() ([]entities.Feature, error)
+	GetFeatureById(ctx context.Context, id uuid.UUID) (*entities.Feature, error)
+	GetAllFeatures(ctx context.Context) ([]entities.Feature, error)
 	UpdateFeature(feature entities.Feature) error
 	DeleteFeature(id uuid.UUID) error
 }
@@ -31,8 +32,8 @@ func (s *featureUsecase) CreateFeature(feature entities.Feature) error {
 	return nil
 }
 
-func (s *featureUsecase) GetFeatureById(id uuid.UUID) (*entities.Feature, error) {
-	feature, err := s.repo.GetById(id)
+func (s *featureUsecase) GetFeatureById(ctx context.Context, id uuid.UUID) (*entities.Feature, error) {
+	feature, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +41,8 @@ func (s *featureUsecase) GetFeatureById(id uuid.UUID) (*entities.Feature, error)
 	return feature, nil
 }
 
-func (s *featureUsecase) GetAllFeatures() ([]entities.Feature, error) {
-	features, err := s.repo.GetAll()
+func (s *featureUsecase) GetAllFeatures(ctx context.Context) ([]entities.Feature, error) {
+	features, err := s.repo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
