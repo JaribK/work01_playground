@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"context"
+	"fmt"
 	"time"
 	"work01/internal/entities"
 
@@ -25,7 +27,7 @@ type AuthorizationRepository interface {
 	GetUserByEmail(email string) (*entities.User, error)
 	CheckAuthorizationByUserID(id uuid.UUID) bool
 	GetAuthorizationByUserID(id uuid.UUID) (*entities.Authorization, error)
-	DeleteAuthorizationByUserId(id uuid.UUID) error
+	DeleteAuthorizationByUserId(id uuid.UUID, tokenString string, ttl time.Duration) error
 	GetAuthorizationByRefreshToken(refreshToken string) (*entities.Authorization, error)
 }
 
@@ -135,13 +137,26 @@ func (r *authorizationRepository) GetAuthorizationByRefreshToken(refreshToken st
 }
 
 // for logout
-func (r *authorizationRepository) DeleteAuthorizationByUserId(id uuid.UUID) error {
-	err := r.db.Model(&entities.Authorization{}).Where("user_id = ?", id).Updates(map[string]interface{}{
+func (r *authorizationRepository) DeleteAuthorizationByUserId(id uuid.UUID, tokenString string, ttl time.Duration) error {
+	cacheKey := fmt.Sprintf("blocked:%s", tokenString)
+
+	err := r.redisCache.Set(&cache.Item{
+		Ctx:   context.Background(),
+		Key:   cacheKey,
+		Value: tokenString,
+		TTL:   ttl,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set token in Redis: %w", err)
+	}
+
+	err = r.db.Model(&entities.Authorization{}).Where("user_id = ?", id).Updates(map[string]interface{}{
 		"access_token":  "",
 		"refresh_token": "",
 	}).Error
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

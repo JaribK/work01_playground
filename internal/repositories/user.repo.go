@@ -67,12 +67,16 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*entities.U
 		return nil, err
 	}
 
-	_ = r.redisCache.Set(&cache.Item{
+	err = r.redisCache.Set(&cache.Item{
 		Ctx:   ctx,
 		Key:   cacheKey,
 		Value: user,
 		TTL:   time.Minute * 10,
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	return &user, nil
 }
@@ -83,14 +87,14 @@ func (r *userRepository) GetAll(ctx context.Context, page, size int, roleId, isA
 
 	cacheKey := fmt.Sprintf("users:page:%d:size:%d:role:%s:isActive:%s", page, size, roleId, isActive)
 
-	if err := r.redisCache.Get(ctx, cacheKey, &users); err == nil {
-		return users, total, nil
-	}
-
 	offset := (page - 1) * size
 	err := r.db.Model(&entities.User{}).Count(&total).Error
 	if err != nil {
 		return nil, 0, err
+	}
+
+	if err := r.redisCache.Get(ctx, cacheKey, &users); err == nil {
+		return users, total, nil
 	}
 
 	query := r.db.Model(&entities.User{}).Preload("Role")

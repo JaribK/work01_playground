@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
-	"work01/internal/auth"
 	"work01/internal/entities"
 	"work01/internal/models"
 	"work01/internal/usecases"
@@ -78,19 +77,12 @@ func (h *HttpAuthorizationHandler) LogoutHandler(c *fiber.Ctx) error {
 		tokenString = tokenString[7:]
 	} //ไม่แน่ใจ
 
-	_, err := auth.ValidateToken(tokenString)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
 	userID, err := uuid.Parse(c.Locals("userId").(string))
 	if err != nil {
 		return err
 	}
 
-	err = h.authorizationUsecase.Logout(userID)
+	err = h.authorizationUsecase.Logout(userID, tokenString)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

@@ -75,6 +75,7 @@ func (r *permissionRepository) GetAll(ctx context.Context) ([]entities.Permissio
 	if err := r.redisCache.Get(ctx, cacheKey, &permissions); err == nil {
 		return permissions, nil
 	}
+
 	err := r.db.Preload("Feature").Find(&permissions).Error
 	if err != nil {
 		return nil, err

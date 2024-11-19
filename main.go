@@ -32,6 +32,7 @@ func main() {
 
 	app.Post("/auth/refresh", authHandler.RefreshToken)
 	app.Post("/auth/login", authHandler.LoginHandler)
+	app.Use("/auth/logout", pkg.TokenValidationMiddleware)
 	app.Post("/auth/logout", authHandler.LogoutHandler)
 	app.Use("/users", pkg.TokenValidationMiddleware)
 	app.Get("/users/me", userHandler.GetUserByIdHandler)

@@ -1,12 +1,15 @@
 package usecases
 
 import (
+	"errors"
 	"fmt"
+	"time"
 	"work01/internal/auth"
 	"work01/internal/entities"
 	"work01/internal/models"
 	"work01/internal/repositories"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -22,7 +25,7 @@ type AuthorizationUsecase interface {
 	UpdateAuthorization(auth entities.Authorization) error
 	DeleteAuthorization(id uuid.UUID, delBy uuid.UUID) error
 	Login(email, password string) (*entities.User, *models.AuthToken, error)
-	Logout(id uuid.UUID) error
+	Logout(id uuid.UUID, token string) error
 	RefreshToken(refreshToken string) (string, error)
 }
 
@@ -124,8 +127,27 @@ func (s *authorizationUsecase) Login(email, password string) (*entities.User, *m
 
 }
 
-func (s *authorizationUsecase) Logout(id uuid.UUID) error {
-	err := s.repo.DeleteAuthorizationByUserId(id)
+func (s *authorizationUsecase) Logout(id uuid.UUID, tokenString string) error {
+	token, err := auth.ValidateToken(tokenString)
+	if err != nil {
+		return fmt.Errorf("token validation failed: %w", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims["exp"] == nil {
+		return errors.New("invalid token claims")
+	}
+
+	expiration := int64(claims["exp"].(float64))
+
+	// Calculate TTL for Redis
+	currentTime := time.Now().Unix()
+	ttl := time.Duration(expiration-currentTime) * time.Second
+	if ttl <= 0 {
+		ttl = 0 // Immediate expiration
+	}
+
+	err = s.repo.DeleteAuthorizationByUserId(id, tokenString, ttl)
 	if err != nil {
 		return err
 	}
