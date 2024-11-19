@@ -62,6 +62,7 @@ func (h *HttpUserHandler) GetUserByIdHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpUserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	page, err := strconv.Atoi(c.Query("page", "1"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -79,7 +80,7 @@ func (h *HttpUserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
 	roleId := c.Query("roleId", "")
 	isActive := c.Query("isActive", "")
 
-	users, err := h.userUseCase.GetAllUsers(page, size, roleId, isActive)
+	users, err := h.userUseCase.GetAllUsers(ctx, page, size, roleId, isActive)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

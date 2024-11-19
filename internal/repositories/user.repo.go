@@ -1,21 +1,27 @@
 package repositories
 
 import (
+	"context"
+	"log"
+	"time"
 	"work01/internal/entities"
 
+	"github.com/go-redis/cache/v9"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type userRepository struct {
-	db *gorm.DB
+	db         *gorm.DB
+	redisCache *cache.Cache
 }
 
 type UserRepository interface {
 	Create(user *entities.User) error
 	GetById(id uuid.UUID) (*entities.User, error)
-	GetAll(page, size int, roleId, isActive string) ([]entities.User, int64, error)
+	GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]entities.User, int64, error)
 	Update(user *entities.User) error
 	Delete(id uuid.UUID, deleteBy uuid.UUID) error
 	GetUserByEmail(email string) (*entities.User, error)
@@ -25,8 +31,12 @@ type UserRepository interface {
 	IsPhoneExistsForUpdate(phone string, id uuid.UUID) (bool, error)
 }
 
-func NewUserRepository(db *gorm.DB) UserRepository {
-	return &userRepository{db: db}
+func NewUserRepository(db *gorm.DB, redisClient *redis.Client) UserRepository {
+	c := cache.New(&cache.Options{
+		Redis:      redisClient,
+		LocalCache: cache.NewTinyLFU(1000, time.Minute),
+	})
+	return &userRepository{db: db, redisCache: c}
 }
 
 func (r *userRepository) Create(user *entities.User) error {
@@ -52,9 +62,15 @@ func (r *userRepository) GetById(id uuid.UUID) (*entities.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) GetAll(page, size int, roleId, isActive string) ([]entities.User, int64, error) {
+func (r *userRepository) GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]entities.User, int64, error) {
 	var users []entities.User
 	var total int64
+
+	cacheKey := "usertest"
+
+	if err := r.redisCache.Get(ctx, cacheKey, &users); err == nil {
+		return users, total, nil
+	}
 
 	offset := (page - 1) * size
 	err := r.db.Model(&entities.User{}).Count(&total).Error
@@ -74,6 +90,17 @@ func (r *userRepository) GetAll(page, size int, roleId, isActive string) ([]enti
 	err = query.Limit(size).Offset(offset).Find(&users).Error
 	if err != nil {
 		return nil, 0, err
+	}
+
+	err = r.redisCache.Set(&cache.Item{
+		Ctx:   ctx,
+		Key:   cacheKey,
+		Value: users,
+		TTL:   time.Minute * 10, // Cache expiration time (TTL)
+	})
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	return users, total, nil

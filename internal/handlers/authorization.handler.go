@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
+	"work01/internal/auth"
 	"work01/internal/entities"
 	"work01/internal/models"
 	"work01/internal/usecases"
@@ -66,23 +67,23 @@ func (h *HttpAuthorizationHandler) LoginHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpAuthorizationHandler) LogoutHandler(c *fiber.Ctx) error {
-	// tokenString := c.Get("Authorization")
-	// if tokenString == "" {
-	// 	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-	// 		"error": "Authorization token is required",
-	// 	})
-	// }
+	tokenString := c.Get("Authorization")
+	if tokenString == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Authorization token is required",
+		})
+	}
 
-	// if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-	// 	tokenString = tokenString[7:]
-	// } //ไม่แน่ใจ
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	} //ไม่แน่ใจ
 
-	// _, err := auth.ValidateToken(tokenString)
-	// if err != nil {
-	// 	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-	// 		"error": err.Error(),
-	// 	})
-	// }
+	_, err := auth.ValidateToken(tokenString)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
 
 	userID, err := uuid.Parse(c.Locals("userId").(string))
 	if err != nil {

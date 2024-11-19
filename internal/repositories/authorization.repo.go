@@ -1,14 +1,18 @@
 package repositories
 
 import (
+	"time"
 	"work01/internal/entities"
 
+	"github.com/go-redis/cache/v9"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type authorizationRepository struct {
-	db *gorm.DB
+	db         *gorm.DB
+	redisCache *cache.Cache
 }
 
 type AuthorizationRepository interface {
@@ -25,8 +29,12 @@ type AuthorizationRepository interface {
 	GetAuthorizationByRefreshToken(refreshToken string) (*entities.Authorization, error)
 }
 
-func NewAuthorizationRepository(db *gorm.DB) AuthorizationRepository {
-	return &authorizationRepository{db: db}
+func NewAuthorizationRepository(db *gorm.DB, redisClient *redis.Client) AuthorizationRepository {
+	c := cache.New(&cache.Options{
+		Redis:      redisClient,
+		LocalCache: cache.NewTinyLFU(1000, time.Minute),
+	})
+	return &authorizationRepository{db: db, redisCache: c}
 }
 
 func (r *authorizationRepository) Create(auth *entities.Authorization) error {

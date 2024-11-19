@@ -19,3 +19,10 @@ type Authorization struct {
 	DeletedAt    gorm.DeletedAt `json:"-"`
 	DeletedBy    *uuid.UUID     `json:"-" gorm:"type:uuid;index;"`
 }
+
+// type BlacklistJWT struct {
+// 	ID          uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;"`
+// 	AccessToken string    `json:"accessToken" gorm:"not null"`
+// 	ExpiredAt   time.Time
+// 	CreatedAt   time.Time
+// }
