@@ -8,3 +8,10 @@ type AuthToken struct {
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refreshToken" validate:"required"`
 }
+
+type ResLogin struct {
+	Message      string      `json:"message"`
+	AccessToken  string      `json:"accessToken"`
+	RefreshToken string      `json:"refreshToken"`
+	User         interface{} `json:"user"`
+}

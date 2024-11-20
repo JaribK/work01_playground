@@ -29,5 +29,6 @@ type ResUserDTO struct {
 	TwoFactorVerified bool                  `json:"twoFactorVerified"`
 	TwoFactorAuthUrl  string                `json:"twoFactorAuthUrl"`
 	TwoFactorToken    string                `json:"twoFactorToken"`
-	Permissions       []entities.Permission `json:"permissions"`
+	Permission        []entities.Permission `json:"-"`
+	Permissions       []PermissionDTO       `json:"permissions"`
 }

@@ -18,7 +18,6 @@ type UserUsecase interface {
 	GetAllUsers(ctx context.Context, page, size int, roleId, isActive string) (models.Pagination, error)
 	UpdateUser(user entities.User) error
 	DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error
-	// Login(email, password string) (*entities.User, string, error)
 }
 
 type userUsecase struct {
@@ -66,6 +65,25 @@ func (s *userUsecase) GetUserById(ctx context.Context, id uuid.UUID) (interface{
 		return nil, err
 	}
 
+	var mergedPermissions []models.PermissionDTO
+	for _, permission := range user.Role.Permissions {
+		mergedPermissions = append(mergedPermissions, models.PermissionDTO{
+			ID:           permission.Feature.ID,
+			Name:         permission.Feature.Name,
+			ParentMenuId: permission.Feature.ParentMenuId,
+			MenuIcon:     permission.Feature.MenuIcon,
+			MenuNameTh:   permission.Feature.MenuNameTh,
+			MenuNameEn:   permission.Feature.MenuNameEn,
+			MenuSlug:     permission.Feature.MenuSlug,
+			MenuSeqNo:    permission.Feature.MenuSeqNo,
+			IsActive:     permission.Feature.IsActive,
+			CreateAccess: permission.CreateAccess,
+			ReadAccess:   permission.ReadAccess,
+			UpdateAccess: permission.UpdateAccess,
+			DeleteAccess: permission.DeleteAccess,
+		})
+	}
+
 	var userDTO []interface{}
 	userDTO = append(userDTO, models.ResUserDTO{
 		UserID:            user.ID,
@@ -80,7 +98,7 @@ func (s *userUsecase) GetUserById(ctx context.Context, id uuid.UUID) (interface{
 		TwoFactorEnabled:  user.TwoFactorEnabled,
 		TwoFactorToken:    user.TwoFactorToken,
 		TwoFactorVerified: user.TwoFactorVerified,
-		Permissions:       user.Role.Permissions,
+		Permissions:       mergedPermissions,
 	})
 
 	return userDTO, nil
@@ -147,23 +165,3 @@ func (s *userUsecase) DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error {
 
 	return nil
 }
-
-// func (s UserUsecase) Login(email, password string) (*entities.User, string, error) {
-// 	user, err := s.repo.GetUserByEmail(email)
-// 	if err != nil {
-// 		return nil, "", fmt.Errorf("email or password Incorrect")
-// 	}
-
-// 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-// 	if err != nil {
-// 		return nil, "", fmt.Errorf("email or password Incorrect")
-// 	}
-
-// 	token, err := auth.GenerateToken(*user)
-// 	if err != nil {
-// 		return nil, "", fmt.Errorf("could not generate token: %v", err)
-// 	}
-
-// 	return user, token, nil
-
-// }

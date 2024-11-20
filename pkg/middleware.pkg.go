@@ -12,7 +12,6 @@ import (
 )
 
 func TokenValidationMiddleware(c *fiber.Ctx) error {
-	// Ensure Redis client is initialized
 	redisClient := NewRedisClient()
 
 	if redisClient == nil {

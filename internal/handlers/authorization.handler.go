@@ -57,12 +57,19 @@ func (h *HttpAuthorizationHandler) LoginHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message":      "Login successful",
-		"user":         user,
-		"accessToken":  token.AccessToken,
-		"refreshToken": token.RefreshToken,
-	})
+	userDTO, err := h.authorizationUsecase.GetUserDataById(user.ID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{})
+	}
+
+	res := models.ResLogin{
+		Message:      "Login successful",
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+		User:         userDTO,
+	}
+
+	return c.JSON(res)
 }
 
 func (h *HttpAuthorizationHandler) LogoutHandler(c *fiber.Ctx) error {

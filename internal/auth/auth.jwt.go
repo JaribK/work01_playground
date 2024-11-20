@@ -62,6 +62,9 @@ func GenerateToken(user *entities.User) (*models.AuthToken, error) {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["userId"] = user.ID
 	claims["email"] = user.Email
+	claims["firstNmae"] = user.FirstName
+	claims["lastName"] = user.LastName
+	claims["roleName"] = user.Role.Name
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
 	t, err := token.SignedString(privateKey)

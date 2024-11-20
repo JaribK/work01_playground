@@ -96,7 +96,7 @@ func (r *authorizationRepository) Delete(id uuid.UUID, deleteBy uuid.UUID) error
 
 func (r *authorizationRepository) GetUserByEmail(email string) (*entities.User, error) {
 	var user entities.User
-	err := r.db.Where("email=?", email).First(&user).Error
+	err := r.db.Preload("Role").Where("email=?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (r *authorizationRepository) GetUserByEmail(email string) (*entities.User, 
 
 func (r *authorizationRepository) GetUserById(id uuid.UUID) (*entities.User, error) {
 	var user entities.User
-	err := r.db.Where("id=?", id).First(&user).Error
+	err := r.db.Preload("Role.Permissions.Feature").Where("id=?", id).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
