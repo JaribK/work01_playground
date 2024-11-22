@@ -188,34 +188,64 @@ func (r *userRepository) Update(ctx context.Context, user *entities.User) error 
 	//query again
 	cacheKey2 := "users_list"
 	var users []entities.User
+	var userDTOs []models.ResAllUserDTOs
 
-	if err := r.redisCache.Get(ctx, cacheKey2, &users); err == nil {
-		updated := false
-		for i, u := range users {
-			if u.ID == user.ID {
-				users[i] = *user
-				updated = true
-				break
-			}
-		}
-
-		if !updated {
-			users = append(users, *user)
-		}
-
-		if err := r.redisCache.Set(&cache.Item{
-			Ctx:   ctx,
-			Key:   cacheKey2,
-			Value: users,
-			TTL:   10 * time.Minute,
-		}); err != nil {
-			return err
-		}
-	} else {
-		if err := r.redisCache.Delete(ctx, cacheKey2); err != nil {
-			return err
-		}
+	if err := r.redisCache.Delete(ctx, cacheKey2); err != nil {
+		return err
 	}
+
+	if err := r.db.Preload("Role").Find(&users).Error; err != nil {
+		return err
+	}
+
+	for _, user := range users {
+		userDTOs = append(userDTOs, models.ResAllUserDTOs{
+			UserID:      user.ID,
+			Email:       user.Email,
+			FullName:    user.FirstName + " " + user.LastName,
+			PhoneNumber: user.PhoneNumber,
+			IsActive:    user.IsActive,
+			Avatar:      user.Avatar,
+			RoleName:    user.Role.Name,
+		})
+	}
+
+	if err := r.redisCache.Set(&cache.Item{
+		Ctx:   ctx,
+		Key:   cacheKey2,
+		Value: userDTOs,
+		TTL:   time.Minute * 10,
+	}); err != nil {
+		return err
+	}
+
+	// if err := r.redisCache.Get(ctx, cacheKey2, &users); err == nil {
+	// 	updated := false
+	// 	for i, u := range users {
+	// 		if u.ID == user.ID {
+	// 			users[i] = *user
+	// 			updated = true
+	// 			break
+	// 		}
+	// 	}
+
+	// 	if !updated {
+	// 		users = append(users, *user)
+	// 	}
+
+	// 	if err := r.redisCache.Set(&cache.Item{
+	// 		Ctx:   ctx,
+	// 		Key:   cacheKey2,
+	// 		Value: users,
+	// 		TTL:   10 * time.Minute,
+	// 	}); err != nil {
+	// 		return err
+	// 	}
+	// } else {
+	// 	if err := r.redisCache.Delete(ctx, cacheKey2); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }

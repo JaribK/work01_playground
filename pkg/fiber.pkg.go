@@ -28,7 +28,7 @@ func RunFiber(gormDatabase *gorm.DB, redisClient *redis.Client) {
 
 	//auth-services
 	app.Post("/login", authHandler.LoginHandler)
-	authService.Post("/refresh", authHandler.RefreshToken)
+	app.Post("/token/refresh", authHandler.RefreshToken)
 	authService.Post("/logout", authHandler.LogoutHandler)
 
 	//users
