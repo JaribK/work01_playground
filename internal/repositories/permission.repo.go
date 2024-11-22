@@ -34,8 +34,7 @@ func NewPermissionRepository(db *gorm.DB, redisClient *redis.Client) PermissionR
 }
 
 func (r *permissionRepository) Create(permission *entities.Permission) error {
-	err := r.db.Create(&permission).Error
-	if err != nil {
+	if err := r.db.Create(&permission).Error; err != nil {
 		return err
 	}
 	return nil
@@ -49,19 +48,16 @@ func (r *permissionRepository) GetById(ctx context.Context, id uuid.UUID) (*enti
 		return &permission, nil
 	}
 
-	err := r.db.Preload("Feature").First(&permission, id).Error
-	if err != nil {
+	if err := r.db.Preload("Feature").First(&permission, id).Error; err != nil {
 		return nil, err
 	}
 
-	err = r.redisCache.Set(&cache.Item{
+	if err := r.redisCache.Set(&cache.Item{
 		Ctx:   ctx,
 		Key:   cacheKey,
 		Value: permission,
 		TTL:   time.Minute * 10,
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
@@ -76,19 +72,16 @@ func (r *permissionRepository) GetAll(ctx context.Context) ([]entities.Permissio
 		return permissions, nil
 	}
 
-	err := r.db.Preload("Feature").Find(&permissions).Error
-	if err != nil {
+	if err := r.db.Preload("Feature").Find(&permissions).Error; err != nil {
 		return nil, err
 	}
 
-	err = r.redisCache.Set(&cache.Item{
+	if err := r.redisCache.Set(&cache.Item{
 		Ctx:   ctx,
 		Key:   cacheKey,
 		Value: permissions,
 		TTL:   time.Minute * 10,
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
@@ -96,16 +89,14 @@ func (r *permissionRepository) GetAll(ctx context.Context) ([]entities.Permissio
 }
 
 func (r *permissionRepository) Update(permission *entities.Permission) error {
-	err := r.db.Where("id=?", permission.ID).Updates(&permission).Error
-	if err != nil {
+	if err := r.db.Where("id=?", permission.ID).Updates(&permission).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *permissionRepository) Delete(id uuid.UUID) error {
-	err := r.db.Delete(&entities.Permission{}, id).Error
-	if err != nil {
+	if err := r.db.Delete(&entities.Permission{}, id).Error; err != nil {
 		return err
 	}
 	return nil

@@ -40,8 +40,7 @@ func NewAuthorizationRepository(db *gorm.DB, redisClient *redis.Client) Authoriz
 }
 
 func (r *authorizationRepository) Create(auth *entities.Authorization) error {
-	err := r.db.Create(&auth).Error
-	if err != nil {
+	if err := r.db.Create(&auth).Error; err != nil {
 		return err
 	}
 
@@ -50,8 +49,7 @@ func (r *authorizationRepository) Create(auth *entities.Authorization) error {
 
 func (r *authorizationRepository) GetById(id uuid.UUID) (*entities.Authorization, error) {
 	var auth entities.Authorization
-	err := r.db.First(&auth, id).Error
-	if err != nil {
+	if err := r.db.First(&auth, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -60,8 +58,7 @@ func (r *authorizationRepository) GetById(id uuid.UUID) (*entities.Authorization
 
 func (r *authorizationRepository) GetAll() ([]entities.Authorization, error) {
 	var auths []entities.Authorization
-	err := r.db.Find(&auths).Error
-	if err != nil {
+	if err := r.db.Find(&auths).Error; err != nil {
 		return nil, err
 	}
 
@@ -69,8 +66,7 @@ func (r *authorizationRepository) GetAll() ([]entities.Authorization, error) {
 }
 
 func (r *authorizationRepository) Update(auth *entities.Authorization) error {
-	err := r.db.Where("id=?", auth.ID).Updates(&auth).Error
-	if err != nil {
+	if err := r.db.Where("id=?", auth.ID).Updates(&auth).Error; err != nil {
 		return err
 	}
 
@@ -79,15 +75,13 @@ func (r *authorizationRepository) Update(auth *entities.Authorization) error {
 
 // delete with path
 func (r *authorizationRepository) Delete(id uuid.UUID, deleteBy uuid.UUID) error {
-	err := r.db.Model(&entities.Authorization{}).Where("id = ?", id).Updates(map[string]interface{}{
+	if err := r.db.Model(&entities.Authorization{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"deleted_by": deleteBy,
-	}).Error
-	if err != nil {
+	}).Error; err != nil {
 		return err
 	}
 
-	err = r.db.Delete(&entities.Authorization{}, id).Error
-	if err != nil {
+	if err := r.db.Delete(&entities.Authorization{}, id).Error; err != nil {
 		return err
 	}
 
@@ -96,8 +90,7 @@ func (r *authorizationRepository) Delete(id uuid.UUID, deleteBy uuid.UUID) error
 
 func (r *authorizationRepository) GetUserByEmail(email string) (*entities.User, error) {
 	var user entities.User
-	err := r.db.Preload("Role").Where("email=?", email).First(&user).Error
-	if err != nil {
+	if err := r.db.Preload("Role").Where("email=?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -105,8 +98,7 @@ func (r *authorizationRepository) GetUserByEmail(email string) (*entities.User, 
 
 func (r *authorizationRepository) GetUserById(id uuid.UUID) (*entities.User, error) {
 	var user entities.User
-	err := r.db.Preload("Role.Permissions.Feature").Where("id=?", id).First(&user).Error
-	if err != nil {
+	if err := r.db.Preload("Role.Permissions.Feature").Where("id=?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -140,21 +132,19 @@ func (r *authorizationRepository) GetAuthorizationByRefreshToken(refreshToken st
 func (r *authorizationRepository) DeleteAuthorizationByUserId(id uuid.UUID, tokenString string, ttl time.Duration) error {
 	cacheKey := fmt.Sprintf("blocked:%s", tokenString)
 
-	err := r.redisCache.Set(&cache.Item{
+	if err := r.redisCache.Set(&cache.Item{
 		Ctx:   context.Background(),
 		Key:   cacheKey,
 		Value: tokenString,
 		TTL:   ttl,
-	})
-	if err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to set token in Redis: %w", err)
 	}
 
-	err = r.db.Model(&entities.Authorization{}).Where("user_id = ?", id).Updates(map[string]interface{}{
+	if err := r.db.Model(&entities.Authorization{}).Where("user_id = ?", id).Updates(map[string]interface{}{
 		"access_token":  "",
 		"refresh_token": "",
-	}).Error
-	if err != nil {
+	}).Error; err != nil {
 		return err
 	}
 

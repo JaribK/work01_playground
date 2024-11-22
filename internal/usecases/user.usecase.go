@@ -14,10 +14,10 @@ import (
 
 type UserUsecase interface {
 	CreateUser(user entities.User) error
-	GetUserById(ctx context.Context, id uuid.UUID) (interface{}, error)
+	GetUserById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error)
 	GetAllUsers(ctx context.Context, page, size int, roleId, isActive string) (models.Pagination, error)
-	UpdateUser(user entities.User) error
-	DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error
+	UpdateUser(ctx context.Context, user entities.User) error
+	DeleteUser(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error
 }
 
 type userUsecase struct {
@@ -29,79 +29,24 @@ func NewUserUsecase(repo repositories.UserRepository) UserUsecase {
 }
 
 func (s *userUsecase) CreateUser(user entities.User) error {
-	if user.FirstName == "" || user.LastName == "" || user.Email == "" || user.PhoneNumber == "" || user.Password == "" {
-		return fmt.Errorf("please fill all theese field -> firstName, lastName, email, phoneNumber and password")
-	}
-
-	emailExists, err := s.repo.IsEmailExists(user.Email)
-	if err != nil {
+	if err := s.CheckVariableToCreate(user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.Password); err != nil {
 		return err
 	}
 
-	if emailExists {
-		return fmt.Errorf("email already exists")
-	}
-
-	phoneExists, err := s.repo.IsPhoneExists(user.PhoneNumber)
-	if err != nil {
-		return err
-	}
-
-	if phoneExists {
-		return fmt.Errorf("phone already exists")
-	}
-
-	err = s.repo.Create(&user)
-	if err != nil {
+	if err := s.repo.Create(&user); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *userUsecase) GetUserById(ctx context.Context, id uuid.UUID) (interface{}, error) {
+func (s *userUsecase) GetUserById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error) {
 	user, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	var mergedPermissions []models.PermissionDTO
-	for _, permission := range user.Role.Permissions {
-		mergedPermissions = append(mergedPermissions, models.PermissionDTO{
-			ID:           permission.Feature.ID,
-			Name:         permission.Feature.Name,
-			ParentMenuId: permission.Feature.ParentMenuId,
-			MenuIcon:     permission.Feature.MenuIcon,
-			MenuNameTh:   permission.Feature.MenuNameTh,
-			MenuNameEn:   permission.Feature.MenuNameEn,
-			MenuSlug:     permission.Feature.MenuSlug,
-			MenuSeqNo:    permission.Feature.MenuSeqNo,
-			IsActive:     permission.Feature.IsActive,
-			CreateAccess: permission.CreateAccess,
-			ReadAccess:   permission.ReadAccess,
-			UpdateAccess: permission.UpdateAccess,
-			DeleteAccess: permission.DeleteAccess,
-		})
-	}
-
-	var userDTO []interface{}
-	userDTO = append(userDTO, models.ResUserDTO{
-		UserID:            user.ID,
-		Email:             user.Email,
-		FirstName:         user.FirstName,
-		LastName:          user.LastName,
-		PhoneNumber:       user.PhoneNumber,
-		Avatar:            user.Avatar,
-		RoleName:          user.Role.Name,
-		RoleLevel:         user.Role.Level,
-		TwoFactorAuthUrl:  user.TwoFactorAuthUrl,
-		TwoFactorEnabled:  user.TwoFactorEnabled,
-		TwoFactorToken:    user.TwoFactorToken,
-		TwoFactorVerified: user.TwoFactorVerified,
-		Permissions:       mergedPermissions,
-	})
-
-	return userDTO, nil
+	return user, nil
 }
 
 func (s *userUsecase) GetAllUsers(ctx context.Context, page, size int, roleId, isActive string) (models.Pagination, error) {
@@ -110,25 +55,67 @@ func (s *userUsecase) GetAllUsers(ctx context.Context, page, size int, roleId, i
 		return models.Pagination{}, err
 	}
 
-	var userDTOs []interface{}
-	for _, user := range users {
-		userDTOs = append(userDTOs, models.ResAllUserDTOs{
-			UserID:      user.ID,
-			Email:       user.Email,
-			FullName:    user.FirstName + " " + user.LastName,
-			PhoneNumber: user.PhoneNumber,
-			IsActive:    user.IsActive,
-			Avatar:      user.Avatar,
-			RoleName:    user.Role.Name,
-		})
-	}
-
-	return helpers.Pagiante(page, size, total, userDTOs), nil
+	return helpers.Pagiante(page, size, total, users), nil
 }
 
-func (s *userUsecase) UpdateUser(user entities.User) error {
-	if user.Email != "" {
-		Exists, err := s.repo.IsEmailExistsForUpdate(user.Email, user.ID)
+func (s *userUsecase) UpdateUser(ctx context.Context, user entities.User) error {
+	if err := s.CheckVariableToUpdate(user.ID, user.Email, user.PhoneNumber); err != nil {
+		return err
+	}
+
+	if err := s.repo.Update(ctx, &user); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *userUsecase) DeleteUser(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error {
+	user, err := s.repo.GetById(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if user.RoleName == "Super Administrator" {
+		return fmt.Errorf("can't remove user that's have role super administrator")
+	}
+
+	if err := s.repo.Delete(ctx, id, deleteBy); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *userUsecase) CheckVariableToCreate(firstName string, lastName string, email string, phoneNumber string, password string) error {
+	if firstName == "" || lastName == "" || email == "" || phoneNumber == "" || password == "" {
+		return fmt.Errorf("please fill all theese field -> firstName, lastName, email, phoneNumber and password")
+	}
+
+	emailExists, err := s.repo.IsEmailExists(email)
+	if err != nil {
+		return err
+	}
+
+	if emailExists {
+		return fmt.Errorf("email already exists")
+	}
+
+	phoneExists, err := s.repo.IsPhoneExists(phoneNumber)
+	if err != nil {
+		return err
+	}
+
+	if phoneExists {
+		return fmt.Errorf("phone already exists")
+	}
+
+	return nil
+}
+
+func (s *userUsecase) CheckVariableToUpdate(userId uuid.UUID, email string, phoneNumber string) error {
+	if email != "" {
+		Exists, err := s.repo.IsEmailExistsForUpdate(email, userId)
 		if err != nil {
 			return err
 		}
@@ -138,8 +125,8 @@ func (s *userUsecase) UpdateUser(user entities.User) error {
 		}
 	}
 
-	if user.PhoneNumber != "" {
-		Exists, err := s.repo.IsPhoneExistsForUpdate(user.PhoneNumber, user.ID)
+	if phoneNumber != "" {
+		Exists, err := s.repo.IsPhoneExistsForUpdate(phoneNumber, userId)
 		if err != nil {
 			return err
 		}
@@ -147,20 +134,6 @@ func (s *userUsecase) UpdateUser(user entities.User) error {
 		if Exists {
 			return errors.New("phone already exists")
 		}
-	}
-
-	err := s.repo.Update(&user)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *userUsecase) DeleteUser(id uuid.UUID, deleteBy uuid.UUID) error {
-	err := s.repo.Delete(id, deleteBy)
-	if err != nil {
-		return err
 	}
 
 	return nil

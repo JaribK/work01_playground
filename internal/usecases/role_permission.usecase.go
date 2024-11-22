@@ -25,8 +25,7 @@ func NewRolePermissionUsecase(repo repositories.RolePermissionRepository) RolePe
 }
 
 func (s *rolePermissionUsecase) CreateRolePermission(rolePermission entities.RolePermission) error {
-	err := s.repo.Create(&rolePermission)
-	if err != nil {
+	if err := s.repo.Create(&rolePermission); err != nil {
 		return err
 	}
 	return nil
@@ -50,8 +49,7 @@ func (s *rolePermissionUsecase) GetAllRolePermissions(ctx context.Context) ([]en
 }
 
 func (s *rolePermissionUsecase) UpdateRolePermission(rolePermission entities.RolePermission) error {
-	err := s.repo.Update(&rolePermission)
-	if err != nil {
+	if err := s.repo.Update(&rolePermission); err != nil {
 		return err
 	}
 
@@ -59,8 +57,7 @@ func (s *rolePermissionUsecase) UpdateRolePermission(rolePermission entities.Rol
 }
 
 func (s *rolePermissionUsecase) DeleteRolePermission(id uuid.UUID) error {
-	err := s.repo.Delete(id)
-	if err != nil {
+	if err := s.repo.Delete(id); err != nil {
 		return err
 	}
 

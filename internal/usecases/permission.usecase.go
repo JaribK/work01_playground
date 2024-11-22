@@ -25,8 +25,7 @@ func NewPermissionUsecase(repo repositories.PermissionRepository) PermissionUsec
 }
 
 func (s *permissionUsecase) CreatePermission(permission entities.Permission) error {
-	err := s.repo.Create(&permission)
-	if err != nil {
+	if err := s.repo.Create(&permission); err != nil {
 		return err
 	}
 	return nil
@@ -50,8 +49,7 @@ func (s *permissionUsecase) GetAllPermissions(ctx context.Context) ([]entities.P
 }
 
 func (s *permissionUsecase) UpdatePermission(permission entities.Permission) error {
-	err := s.repo.Update(&permission)
-	if err != nil {
+	if err := s.repo.Update(&permission); err != nil {
 		return err
 	}
 
@@ -59,8 +57,7 @@ func (s *permissionUsecase) UpdatePermission(permission entities.Permission) err
 }
 
 func (s *permissionUsecase) DeletePermission(id uuid.UUID) error {
-	err := s.repo.Delete(id)
-	if err != nil {
+	if err := s.repo.Delete(id); err != nil {
 		return err
 	}
 

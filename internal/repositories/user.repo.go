@@ -3,9 +3,9 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 	"work01/internal/entities"
+	"work01/internal/models"
 
 	"github.com/go-redis/cache/v9"
 	"github.com/google/uuid"
@@ -21,10 +21,10 @@ type userRepository struct {
 
 type UserRepository interface {
 	Create(user *entities.User) error
-	GetById(ctx context.Context, id uuid.UUID) (*entities.User, error)
-	GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]entities.User, int64, error)
-	Update(user *entities.User) error
-	Delete(id uuid.UUID, deleteBy uuid.UUID) error
+	GetById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error)
+	GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]models.ResAllUserDTOs, int64, error)
+	Update(ctx context.Context, user *entities.User) error
+	Delete(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error
 	GetUserByEmail(email string) (*entities.User, error)
 	IsEmailExists(email string) (bool, error)
 	IsPhoneExists(phone string) (bool, error)
@@ -45,56 +45,84 @@ func (r *userRepository) Create(user *entities.User) error {
 	if err != nil {
 		return err
 	}
-
 	user.Password = string(hashedPassword)
-	err = r.db.Create(&user).Error
-	if err != nil {
+	if err = r.db.Create(&user).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*entities.User, error) {
+func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error) {
 	var user entities.User
+	var userDTO models.ResUserDTO
+	var mergedPermissions []models.PermissionDTO
 
 	cacheKey := fmt.Sprintf("user:%s", id)
-	if err := r.redisCache.Get(ctx, cacheKey, &user); err == nil {
-		return &user, nil
+
+	if err := r.redisCache.Get(ctx, cacheKey, userDTO); err == nil {
+		return &userDTO, nil
 	}
 
-	err := r.db.Preload("Role.Permissions.Feature").Where("id=?", id).First(&user).Error
-	if err != nil {
+	if err := r.db.Preload("Role.Permissions.Feature").Where("id=?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
 
-	err = r.redisCache.Set(&cache.Item{
+	for _, permission := range user.Role.Permissions {
+		mergedPermissions = append(mergedPermissions, models.PermissionDTO{
+			ID:           permission.Feature.ID,
+			Name:         permission.Feature.Name,
+			ParentMenuId: permission.Feature.ParentMenuId,
+			MenuIcon:     permission.Feature.MenuIcon,
+			MenuNameTh:   permission.Feature.MenuNameTh,
+			MenuNameEn:   permission.Feature.MenuNameEn,
+			MenuSlug:     permission.Feature.MenuSlug,
+			MenuSeqNo:    permission.Feature.MenuSeqNo,
+			IsActive:     permission.Feature.IsActive,
+			CreateAccess: permission.CreateAccess,
+			ReadAccess:   permission.ReadAccess,
+			UpdateAccess: permission.UpdateAccess,
+			DeleteAccess: permission.DeleteAccess,
+		})
+	}
+
+	userDTO = models.ResUserDTO{
+		UserID:            user.ID,
+		Email:             user.Email,
+		FirstName:         user.FirstName,
+		LastName:          user.LastName,
+		PhoneNumber:       user.PhoneNumber,
+		Avatar:            user.Avatar,
+		RoleName:          user.Role.Name,
+		RoleLevel:         user.Role.Level,
+		TwoFactorAuthUrl:  user.TwoFactorAuthUrl,
+		TwoFactorEnabled:  user.TwoFactorEnabled,
+		TwoFactorToken:    user.TwoFactorToken,
+		TwoFactorVerified: user.TwoFactorVerified,
+		Permissions:       mergedPermissions,
+	}
+
+	if err := r.redisCache.Set(&cache.Item{
 		Ctx:   ctx,
 		Key:   cacheKey,
 		Value: user,
 		TTL:   time.Minute * 10,
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
-	return &user, nil
+	return &userDTO, nil
 }
 
-func (r *userRepository) GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]entities.User, int64, error) {
+func (r *userRepository) GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]models.ResAllUserDTOs, int64, error) {
 	var users []entities.User
 	var total int64
+	var userDTOs []models.ResAllUserDTOs
 
-	cacheKey := fmt.Sprintf("users:page:%d:size:%d:role:%s:isActive:%s", page, size, roleId, isActive)
+	cacheKey := "users_list"
 
 	offset := (page - 1) * size
-	err := r.db.Model(&entities.User{}).Count(&total).Error
-	if err != nil {
+	if err := r.db.Model(&entities.User{}).Count(&total).Error; err != nil {
 		return nil, 0, err
-	}
-
-	if err := r.redisCache.Get(ctx, cacheKey, &users); err == nil {
-		return users, total, nil
 	}
 
 	query := r.db.Model(&entities.User{}).Preload("Role")
@@ -106,43 +134,100 @@ func (r *userRepository) GetAll(ctx context.Context, page, size int, roleId, isA
 		query = query.Where("users.is_active = ?", isActive)
 	}
 
-	err = query.Limit(size).Offset(offset).Find(&users).Error
-	if err != nil {
+	if err := r.redisCache.Get(ctx, cacheKey, userDTOs); err == nil {
+		return userDTOs, total, nil
+	}
+
+	if err := query.Limit(size).Offset(offset).Find(&users).Error; err != nil {
 		return nil, 0, err
 	}
 
-	err = r.redisCache.Set(&cache.Item{
+	for _, user := range users {
+		userDTOs = append(userDTOs, models.ResAllUserDTOs{
+			UserID:      user.ID,
+			Email:       user.Email,
+			FullName:    user.FirstName + " " + user.LastName,
+			PhoneNumber: user.PhoneNumber,
+			IsActive:    user.IsActive,
+			Avatar:      user.Avatar,
+			RoleName:    user.Role.Name,
+		})
+	}
+
+	if err := r.redisCache.Set(&cache.Item{
 		Ctx:   ctx,
 		Key:   cacheKey,
-		Value: users,
-		TTL:   time.Minute * 10, // Cache expiration time (TTL)
-	})
-
-	if err != nil {
-		log.Fatal(err)
+		Value: userDTOs,
+		TTL:   time.Minute * 10,
+	}); err != nil {
+		return nil, 0, err
 	}
 
-	return users, total, nil
+	return userDTOs, total, nil
 }
 
-func (r *userRepository) Update(user *entities.User) error {
-	err := r.db.Where("id=?", user.ID).Updates(&user).Error
-	if err != nil {
+func (r *userRepository) Update(ctx context.Context, user *entities.User) error {
+	if err := r.db.Where("id=?", user.ID).Updates(&user).Error; err != nil {
 		return err
 	}
+
+	cacheKey1 := fmt.Sprintf("user:%s", user.ID)
+	if err := r.redisCache.Delete(ctx, cacheKey1); err != nil {
+		return nil
+	}
+
+	if err := r.redisCache.Set(&cache.Item{
+		Ctx:   ctx,
+		Key:   cacheKey1,
+		Value: user,
+		TTL:   time.Minute * 10,
+	}); err != nil {
+		return err
+	}
+
+	//query again
+	cacheKey2 := "users_list"
+	var users []entities.User
+
+	if err := r.redisCache.Get(ctx, cacheKey2, &users); err == nil {
+		updated := false
+		for i, u := range users {
+			if u.ID == user.ID {
+				users[i] = *user
+				updated = true
+				break
+			}
+		}
+
+		if !updated {
+			users = append(users, *user)
+		}
+
+		if err := r.redisCache.Set(&cache.Item{
+			Ctx:   ctx,
+			Key:   cacheKey2,
+			Value: users,
+			TTL:   10 * time.Minute,
+		}); err != nil {
+			return err
+		}
+	} else {
+		if err := r.redisCache.Delete(ctx, cacheKey2); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func (r *userRepository) Delete(id uuid.UUID, deleteBy uuid.UUID) error {
-	err := r.db.Model(&entities.User{}).Where("id = ?", id).Updates(map[string]interface{}{
+func (r *userRepository) Delete(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error {
+	if err := r.db.Model(&entities.User{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"deleted_by": deleteBy,
-	}).Error
-	if err != nil {
+	}).Error; err != nil {
 		return err
 	}
 
-	err = r.db.Delete(&entities.User{}, id).Error
-	if err != nil {
+	if err := r.db.Delete(&entities.User{}, id).Error; err != nil {
 		return err
 	}
 
@@ -151,8 +236,7 @@ func (r *userRepository) Delete(id uuid.UUID, deleteBy uuid.UUID) error {
 
 func (r *userRepository) GetUserByEmail(email string) (*entities.User, error) {
 	var user entities.User
-	err := r.db.Where("email=?", email).First(&user).Error
-	if err != nil {
+	if err := r.db.Where("email=?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -160,8 +244,7 @@ func (r *userRepository) GetUserByEmail(email string) (*entities.User, error) {
 
 func (r *userRepository) IsEmailExists(email string) (bool, error) {
 	var user entities.User
-	err := r.db.Where("email = ?", email).First(&user).Error
-	if err != nil {
+	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return false, nil
 		}
@@ -172,8 +255,7 @@ func (r *userRepository) IsEmailExists(email string) (bool, error) {
 
 func (r *userRepository) IsPhoneExists(phone string) (bool, error) {
 	var user entities.User
-	err := r.db.Where("phone_number = ?", phone).First(&user).Error
-	if err != nil {
+	if err := r.db.Where("phone_number = ?", phone).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return false, nil
 		}
@@ -184,8 +266,7 @@ func (r *userRepository) IsPhoneExists(phone string) (bool, error) {
 
 func (r *userRepository) IsEmailExistsForUpdate(email string, id uuid.UUID) (bool, error) {
 	var user entities.User
-	err := r.db.Where("email = ?", email).Not("id=?", id).First(&user).Error
-	if err != nil {
+	if err := r.db.Where("email = ?", email).Not("id=?", id).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return false, nil
 		}
@@ -196,13 +277,11 @@ func (r *userRepository) IsEmailExistsForUpdate(email string, id uuid.UUID) (boo
 
 func (r *userRepository) IsPhoneExistsForUpdate(phone string, id uuid.UUID) (bool, error) {
 	var user entities.User
-	err := r.db.Where("phone_number = ?", phone).Not("id=?", id).First(&user).Error
-	if err != nil {
+	if err := r.db.Where("phone_number = ?", phone).Not("id=?", id).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return false, nil
 		}
 		return false, nil
 	}
-
 	return true, nil
 }

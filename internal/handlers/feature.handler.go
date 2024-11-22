@@ -69,6 +69,7 @@ func (h *HttpFeatureHandler) GetAllFeaturesHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpFeatureHandler) UpdateFeatureHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -85,7 +86,7 @@ func (h *HttpFeatureHandler) UpdateFeatureHandler(c *fiber.Ctx) error {
 
 	feature.ID = id
 
-	if err := h.featureUseCase.UpdateFeature(feature); err != nil {
+	if err := h.featureUseCase.UpdateFeature(ctx, feature); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})

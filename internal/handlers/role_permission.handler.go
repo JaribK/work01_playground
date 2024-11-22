@@ -61,7 +61,7 @@ func (h *HttpRolePermissionHandler) GetAllRolePermissionsHandler(c *fiber.Ctx) e
 	rolePermissions, err := h.rolePermissionUseCase.GetAllRolePermissions(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to fetch roles.",
+			"error": err.Error(),
 		})
 	}
 

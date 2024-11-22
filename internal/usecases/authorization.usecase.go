@@ -35,8 +35,7 @@ func NewAuthorizationUsecase(repo repositories.AuthorizationRepository) Authoriz
 }
 
 func (s *authorizationUsecase) CreateAuthorization(auth entities.Authorization) error {
-	err := s.repo.Create(&auth)
-	if err != nil {
+	if err := s.repo.Create(&auth); err != nil {
 		return err
 	}
 	return nil
@@ -105,8 +104,7 @@ func (s *authorizationUsecase) GetAllAuthorizations() ([]entities.Authorization,
 }
 
 func (s *authorizationUsecase) UpdateAuthorization(auth entities.Authorization) error {
-	err := s.repo.Update(&auth)
-	if err != nil {
+	if err := s.repo.Update(&auth); err != nil {
 		return err
 	}
 
@@ -114,8 +112,7 @@ func (s *authorizationUsecase) UpdateAuthorization(auth entities.Authorization) 
 }
 
 func (s *authorizationUsecase) DeleteAuthorization(id uuid.UUID, delBy uuid.UUID) error {
-	err := s.repo.Delete(id, delBy)
-	if err != nil {
+	if err := s.repo.Delete(id, delBy); err != nil {
 		return err
 	}
 
@@ -128,8 +125,7 @@ func (s *authorizationUsecase) Login(email, password string) (*entities.User, *m
 		return nil, nil, fmt.Errorf("email or password Incorrect")
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return nil, nil, fmt.Errorf("email or password Incorrect")
 	}
 
@@ -192,8 +188,7 @@ func (s *authorizationUsecase) Logout(id uuid.UUID, tokenString string) error {
 		ttl = 0
 	}
 
-	err = s.repo.DeleteAuthorizationByUserId(id, tokenString, ttl)
-	if err != nil {
+	if err = s.repo.DeleteAuthorizationByUserId(id, tokenString, ttl); err != nil {
 		return err
 	}
 

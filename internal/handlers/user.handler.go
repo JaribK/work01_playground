@@ -55,7 +55,7 @@ func (h *HttpUserHandler) GetUserByIdHandler(c *fiber.Ctx) error {
 	role, err := h.userUseCase.GetUserById(ctx, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "user not found.",
+			"error": err.Error(),
 		})
 	}
 
@@ -92,6 +92,7 @@ func (h *HttpUserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpUserHandler) UpdateUserHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -113,7 +114,7 @@ func (h *HttpUserHandler) UpdateUserHandler(c *fiber.Ctx) error {
 
 	user.ID = id
 	user.UpdatedBy = updBy
-	if err := h.userUseCase.UpdateUser(user); err != nil {
+	if err := h.userUseCase.UpdateUser(ctx, user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"err": err.Error(),
 		})
@@ -126,10 +127,11 @@ func (h *HttpUserHandler) UpdateUserHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpUserHandler) DeleteUserHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID.",
+			"error": err.Error(),
 		})
 	}
 
@@ -138,7 +140,7 @@ func (h *HttpUserHandler) DeleteUserHandler(c *fiber.Ctx) error {
 		return err
 	}
 
-	if err := h.userUseCase.DeleteUser(id, delBy); err != nil {
+	if err := h.userUseCase.DeleteUser(ctx, id, delBy); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -149,30 +151,3 @@ func (h *HttpUserHandler) DeleteUserHandler(c *fiber.Ctx) error {
 		"ID user": id,
 	})
 }
-
-// func (h *HttpUserHandler) LoginHandler(c *fiber.Ctx) error {
-// 	var requests struct {
-// 		Email    string `json:"email"`
-// 		Password string `json:"password"`
-// 	}
-
-// 	if err := c.BodyParser(&requests); err != nil {
-// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-// 			"error": "invalid request",
-// 		})
-// 	}
-
-// 	user, token, err := h.userUseCase.Login(requests.Email, requests.Password)
-
-// 	if err != nil {
-// 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-// 			"error": err.Error(),
-// 		})
-// 	}
-
-// 	return c.JSON(fiber.Map{
-// 		"message": "Login successful",
-// 		"user":    user,
-// 		"token":   token,
-// 	})
-// }

@@ -67,7 +67,7 @@ func (h *HttpRoleHandler) GetAllRolesHandler(c *fiber.Ctx) error {
 	roles, err := h.roleUseCase.GetAllRoles(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to fetch roles.",
+			"error": err.Error(),
 		})
 	}
 
@@ -79,7 +79,7 @@ func (h *HttpRoleHandler) GetAllRolesDropdownHandler(c *fiber.Ctx) error {
 	roles, err := h.roleUseCase.GetAllRolesDropdown(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to fetch roles.",
+			"error": err.Error(),
 		})
 	}
 
@@ -87,6 +87,7 @@ func (h *HttpRoleHandler) GetAllRolesDropdownHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -108,7 +109,7 @@ func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 
 	role.ID = id
 	role.UpdatedBy = updBy
-	if err := h.roleUseCase.UpdateRole(role); err != nil {
+	if err := h.roleUseCase.UpdateRole(ctx, role); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -121,6 +122,7 @@ func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 }
 
 func (h *HttpRoleHandler) DeleteRoleHandler(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -133,7 +135,7 @@ func (h *HttpRoleHandler) DeleteRoleHandler(c *fiber.Ctx) error {
 		return err
 	}
 
-	if err := h.roleUseCase.DeleteRole(id, delBy); err != nil {
+	if err := h.roleUseCase.DeleteRole(ctx, id, delBy); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
