@@ -90,7 +90,7 @@ func (r *authorizationRepository) Delete(id uuid.UUID, deleteBy uuid.UUID) error
 
 func (r *authorizationRepository) GetUserByEmail(email string) (*entities.User, error) {
 	var user entities.User
-	if err := r.db.Preload("Role").Where("email=?", email).First(&user).Error; err != nil {
+	if err := r.db.Preload("Role.Permissions.Feature").Where("email=?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil

@@ -74,6 +74,17 @@ func (h *HttpRoleHandler) GetAllRolesHandler(c *fiber.Ctx) error {
 	return c.JSON(roles)
 }
 
+func (h *HttpRoleHandler) GetAllRolesNoModifyHandler(c *fiber.Ctx) error {
+	roles, err := h.roleUseCase.GetAllRolesNoModify()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(roles)
+}
+
 func (h *HttpRoleHandler) GetAllRolesDropdownHandler(c *fiber.Ctx) error {
 	ctx := c.Context()
 	roles, err := h.roleUseCase.GetAllRolesDropdown(ctx)

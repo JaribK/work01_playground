@@ -13,6 +13,7 @@ import (
 type RoleUsecase interface {
 	CreateRole(role entities.Role) error
 	GetRoleById(ctx context.Context, id uuid.UUID) (*entities.Role, error)
+	GetAllRolesNoModify() ([]entities.Role, error)
 	GetAllRoles(ctx context.Context) ([]models.ResRoleDetails, error)
 	GetAllRolesDropdown(ctx context.Context) ([]models.ResRoleDropDown, error)
 	UpdateRole(ctx context.Context, role entities.Role) error
@@ -46,8 +47,17 @@ func (s *roleUsecase) GetRoleById(ctx context.Context, id uuid.UUID) (*entities.
 	return role, nil
 }
 
+func (s *roleUsecase) GetAllRolesNoModify() ([]entities.Role, error) {
+	roles, err := s.repo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	return roles, nil
+}
+
 func (s *roleUsecase) GetAllRoles(ctx context.Context) ([]models.ResRoleDetails, error) {
-	roles, err := s.repo.GetAll(ctx)
+	roles, err := s.repo.GetAllModify(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +66,7 @@ func (s *roleUsecase) GetAllRoles(ctx context.Context) ([]models.ResRoleDetails,
 }
 
 func (s *roleUsecase) GetAllRolesDropdown(ctx context.Context) ([]models.ResRoleDropDown, error) {
-	roles, err := s.repo.GetAll(ctx)
+	roles, err := s.repo.GetAllModify(ctx)
 	if err != nil {
 		return nil, err
 	}

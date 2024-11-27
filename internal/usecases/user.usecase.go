@@ -15,6 +15,7 @@ import (
 type UserUsecase interface {
 	CreateUser(user entities.User) error
 	GetUserById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error)
+	GetAllUsersNoPage() ([]models.ResUsersNoPage, error)
 	GetAllUsers(ctx context.Context, page, size int, roleId, isActive string) (models.Pagination, error)
 	UpdateUser(ctx context.Context, user entities.User) error
 	DeleteUser(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error
@@ -56,6 +57,15 @@ func (s *userUsecase) GetAllUsers(ctx context.Context, page, size int, roleId, i
 	}
 
 	return helpers.Pagiante(page, size, total, users), nil
+}
+
+func (s *userUsecase) GetAllUsersNoPage() ([]models.ResUsersNoPage, error) {
+	users, err := s.repo.GetAllNoPage()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 func (s *userUsecase) UpdateUser(ctx context.Context, user entities.User) error {

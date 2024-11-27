@@ -1,0 +1,72 @@
+syntax= "proto3";
+
+package proto;
+option go_package="work01/proto";
+
+service Authorization {
+    rpc Login (LoginRequest) returns (LoginResponse);
+    rpc Logout (LogoutRequest) returns (LogoutResponse);
+    rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse);
+}
+
+message PermissionDTO {
+    string feature_id = 1;
+    string name = 2;
+    // string parent_menu_id = 3; // Optional, use string to represent UUID
+    string menu_icon = 4;
+    string menu_name_th = 5;
+    string menu_name_en = 6;
+    string menu_slug = 7;
+    string menu_seq_no = 8;
+    bool is_active = 9;
+    bool create_access = 10;
+    bool read_access = 11;
+    bool update_access = 12;
+    bool delete_access = 13;
+    optional string parent_menu_id = 14;
+}
+
+message User {
+    string user_id = 1;
+    string email = 2;
+    string first_name = 3;
+    string last_name = 4;
+    string phone_number = 5;
+    string avatar = 6;
+    string role_name = 7;
+    int32 role_level = 8;
+    bool two_factor_enabled = 9;
+    bool two_factor_verified = 10;
+    string two_factor_auth_url = 11;
+    string two_factor_token = 12;
+    repeated PermissionDTO permissions = 13;
+}
+
+message LoginRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string message = 1;
+    string access_token = 2;
+    string refresh_token = 3;
+    User user = 4;
+}
+
+message LogoutRequest {
+    string token = 1;
+    string user_id = 2;
+}
+
+message LogoutResponse {
+    string message = 1;
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+    string access_token = 1;
+}

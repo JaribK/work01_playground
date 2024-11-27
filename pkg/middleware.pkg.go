@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"work01/internal/auth"
+	"work01/internal/helpers"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -31,7 +31,7 @@ func TokenValidationMiddleware(c *fiber.Ctx) error {
 		tokenString = tokenString[7:]
 	}
 
-	token, err := auth.ValidateToken(tokenString)
+	token, err := helpers.ValidateToken(tokenString)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": err.Error(),

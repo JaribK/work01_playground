@@ -61,7 +61,7 @@ func (h *HttpPermissionHandler) GetAllPermissionsHandler(c *fiber.Ctx) error {
 	permissions, err := h.permissionUseCase.GetAllPermissions(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to fetch permissions.",
+			"error": err.Error(),
 		})
 	}
 

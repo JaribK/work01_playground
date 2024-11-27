@@ -21,7 +21,7 @@ type featureRepository struct {
 type FeatureRepository interface {
 	Create(user *entities.Feature) error
 	GetById(ctx context.Context, id uuid.UUID) (*models.FeatureDTO, error)
-	GetAll(ctx context.Context) ([]entities.Feature, error)
+	GetAll() ([]entities.Feature, error)
 	GetAllFeaturePermission(ctx context.Context) ([]models.FeatureDTO, error)
 	Update(ctx context.Context, feature *entities.Feature) error
 	Delete(id uuid.UUID) error
@@ -51,8 +51,7 @@ func (r *featureRepository) GetById(ctx context.Context, id uuid.UUID) (*models.
 		return &featurePermission, nil
 	}
 
-	err := r.db.Model(&entities.Permission{}).Preload("Feature").Joins("RIGHT JOIN features ON permissions.feature_id = features.id").Where("permissions.feature_id=?", id).First(&permission).Error
-	if err != nil {
+	if err := r.db.Model(&entities.Permission{}).Preload("Feature").Joins("RIGHT JOIN features ON permissions.feature_id = features.id").Where("permissions.feature_id=?", id).First(&permission).Error; err != nil {
 		return nil, err
 	}
 
@@ -77,26 +76,26 @@ func (r *featureRepository) GetById(ctx context.Context, id uuid.UUID) (*models.
 	return &featurePermission, nil
 }
 
-func (r *featureRepository) GetAll(ctx context.Context) ([]entities.Feature, error) {
+func (r *featureRepository) GetAll() ([]entities.Feature, error) {
 	var features []entities.Feature
 
-	cacheKey := fmt.Sprintln("feature_list")
-	if err := r.redisCache.Get(ctx, cacheKey, &features); err == nil {
-		return features, nil
-	}
+	// cacheKey := fmt.Sprintln("feature_list")
+	// if err := r.redisCache.Get(ctx, cacheKey, &features); err == nil {
+	// 	return features, nil
+	// }
 
 	if err := r.db.Find(&features).Error; err != nil {
 		return nil, err
 	}
 
-	if err := r.redisCache.Set(&cache.Item{
-		Ctx:   ctx,
-		Key:   cacheKey,
-		Value: features,
-		TTL:   time.Minute * 10,
-	}); err != nil {
-		return nil, err
-	}
+	// if err := r.redisCache.Set(&cache.Item{
+	// 	Ctx:   ctx,
+	// 	Key:   cacheKey,
+	// 	Value: features,
+	// 	TTL:   time.Minute * 10,
+	// }); err != nil {
+	// 	return nil, err
+	// }
 	return features, nil
 }
 

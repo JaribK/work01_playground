@@ -12,7 +12,8 @@ import (
 type FeatureUsecase interface {
 	CreateFeature(feature entities.Feature) error
 	GetFeatureById(ctx context.Context, id uuid.UUID) (*models.FeatureDTO, error)
-	GetAllFeatures(ctx context.Context) ([]models.FeatureDTO, error)
+	GetAllFeatures() ([]entities.Feature, error)
+	GetAllFeaturePermissions(ctx context.Context) ([]models.FeatureDTO, error)
 	UpdateFeature(ctx context.Context, feature entities.Feature) error
 	DeleteFeature(id uuid.UUID) error
 }
@@ -41,8 +42,16 @@ func (s *featureUsecase) GetFeatureById(ctx context.Context, id uuid.UUID) (*mod
 	return feature, nil
 }
 
-func (s *featureUsecase) GetAllFeatures(ctx context.Context) ([]models.FeatureDTO, error) {
+func (s *featureUsecase) GetAllFeaturePermissions(ctx context.Context) ([]models.FeatureDTO, error) {
 	features, err := s.repo.GetAllFeaturePermission(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return features, nil
+}
+
+func (s *featureUsecase) GetAllFeatures() ([]entities.Feature, error) {
+	features, err := s.repo.GetAll()
 	if err != nil {
 		return nil, err
 	}

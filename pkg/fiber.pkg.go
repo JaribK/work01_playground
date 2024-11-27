@@ -32,6 +32,7 @@ func RunFiber(gormDatabase *gorm.DB, redisClient *redis.Client) {
 	authService.Post("/logout", authHandler.LogoutHandler)
 
 	//users
+	api.Get("/users/default", userHandler.GetAllUsersNoPageHandler)
 	api.Get("/users/me", userHandler.GetUserByIdHandler)
 	api.Get("/users", userHandler.GetAllUsersHandler)
 	api.Post("/users", userHandler.CreateUserHandler)
@@ -43,6 +44,7 @@ func RunFiber(gormDatabase *gorm.DB, redisClient *redis.Client) {
 	roleHandler := handlers.NewHttpRoleHandler(roleUsecase)
 
 	//roles
+	api.Get("/roles/default", roleHandler.GetAllRolesNoModifyHandler)
 	api.Get("/roles/:id", roleHandler.GetRoleByIdHandler)
 	api.Get("/roles", roleHandler.GetAllRolesHandler)
 	api.Get("/rolesdropdown", roleHandler.GetAllRolesDropdownHandler)
@@ -55,8 +57,9 @@ func RunFiber(gormDatabase *gorm.DB, redisClient *redis.Client) {
 	featureHandler := handlers.NewHttpFeatureHandler(featureUsecase)
 
 	//features
+	api.Get("/features/default", featureHandler.GetAllFeaturesHandler)
 	api.Get("/features/:id", featureHandler.GetFeatureByIdHandler)
-	api.Get("/features", featureHandler.GetAllFeaturesHandler)
+	api.Get("/features", featureHandler.GetAllFeaturePermissionsHandler)
 	api.Post("/features", featureHandler.CreateFeatureHandler)
 	api.Put("/features/:id", featureHandler.UpdateFeatureHandler)
 	api.Delete("/features/:id", featureHandler.DeleteFeatureHandler)

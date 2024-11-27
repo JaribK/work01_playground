@@ -91,6 +91,17 @@ func (h *HttpUserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(users)
 }
 
+func (h *HttpUserHandler) GetAllUsersNoPageHandler(c *fiber.Ctx) error {
+	users, err := h.userUseCase.GetAllUsersNoPage()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(users)
+}
+
 func (h *HttpUserHandler) UpdateUserHandler(c *fiber.Ctx) error {
 	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))

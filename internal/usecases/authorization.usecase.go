@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	"work01/internal/auth"
 	"work01/internal/entities"
+	"work01/internal/helpers"
 	"work01/internal/models"
 	"work01/internal/repositories"
 
@@ -75,8 +75,7 @@ func (s *authorizationUsecase) GetUserDataById(id uuid.UUID) (interface{}, error
 		})
 	}
 
-	var userDTO []interface{}
-	userDTO = append(userDTO, models.ResUserDTO{
+	userDTO := models.ResUserDTO{
 		UserID:            user.ID,
 		Email:             user.Email,
 		FirstName:         user.FirstName,
@@ -90,9 +89,9 @@ func (s *authorizationUsecase) GetUserDataById(id uuid.UUID) (interface{}, error
 		TwoFactorToken:    user.TwoFactorToken,
 		TwoFactorVerified: user.TwoFactorVerified,
 		Permissions:       mergedPermissions,
-	})
+	}
 
-	return userDTO, nil
+	return &userDTO, nil
 }
 
 func (s *authorizationUsecase) GetAllAuthorizations() ([]entities.Authorization, error) {
@@ -129,7 +128,7 @@ func (s *authorizationUsecase) Login(email, password string) (*entities.User, *m
 		return nil, nil, fmt.Errorf("email or password Incorrect")
 	}
 
-	token, err := auth.GenerateToken(user)
+	token, err := helpers.GenerateToken(user)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not generate token: %v", err)
 	}
@@ -170,7 +169,7 @@ func (s *authorizationUsecase) Login(email, password string) (*entities.User, *m
 }
 
 func (s *authorizationUsecase) Logout(id uuid.UUID, tokenString string) error {
-	token, err := auth.ValidateToken(tokenString)
+	token, err := helpers.ValidateToken(tokenString)
 	if err != nil {
 		return fmt.Errorf("token validation failed: %w", err)
 	}
@@ -206,12 +205,12 @@ func (s *authorizationUsecase) RefreshToken(refreshToken string) (string, error)
 		return "", err
 	}
 
-	_, err = auth.ValidateToken(refreshToken)
+	_, err = helpers.ValidateToken(refreshToken)
 	if err != nil {
 		return "", err
 	}
 
-	newAccessToken, err := auth.GenerateToken(user)
+	newAccessToken, err := helpers.GenerateToken(user)
 	authorization.AccessToken = newAccessToken.AccessToken
 	if err != nil {
 		return "", err

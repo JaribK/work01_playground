@@ -22,6 +22,7 @@ type userRepository struct {
 type UserRepository interface {
 	Create(user *entities.User) error
 	GetById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error)
+	GetAllNoPage() ([]models.ResUsersNoPage, error)
 	GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]models.ResAllUserDTOs, int64, error)
 	Update(ctx context.Context, user *entities.User) error
 	Delete(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error
@@ -50,6 +51,39 @@ func (r *userRepository) Create(user *entities.User) error {
 		return err
 	}
 	return nil
+}
+
+func (r *userRepository) GetAllNoPage() ([]models.ResUsersNoPage, error) {
+	var users []entities.User
+	var resUsers []models.ResUsersNoPage
+	if err := r.db.Preload("Role.Permissions.Feature").Omit("").Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		resUsers = append(resUsers, models.ResUsersNoPage{
+			ID:                 user.ID,
+			FirstName:          user.FirstName,
+			LastName:           user.LastName,
+			Email:              user.Email,
+			PhoneNumber:        user.PhoneNumber,
+			Avatar:             user.Avatar,
+			TwoFactorEnabled:   user.TwoFactorEnabled,
+			TwoFactorVerified:  user.TwoFactorVerified,
+			TwoFactorToken:     user.TwoFactorToken,
+			TwoFactorAuthUrl:   user.TwoFactorAuthUrl,
+			RoleId:             user.RoleId,
+			Role:               user.Role,
+			ForgotPasswordCode: user.ForgotPasswordCode,
+			IsActive:           user.IsActive,
+			CreatedAt:          user.CreatedAt,
+			CreatedBy:          user.CreatedBy,
+			UpdatedAt:          user.UpdatedAt,
+			UpdatedBy:          user.UpdatedBy,
+		})
+	}
+
+	return resUsers, nil
 }
 
 func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error) {
@@ -92,6 +126,7 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.Res
 		LastName:          user.LastName,
 		PhoneNumber:       user.PhoneNumber,
 		Avatar:            user.Avatar,
+		RoleId:            user.Role.ID,
 		RoleName:          user.Role.Name,
 		RoleLevel:         user.Role.Level,
 		TwoFactorAuthUrl:  user.TwoFactorAuthUrl,
@@ -218,34 +253,6 @@ func (r *userRepository) Update(ctx context.Context, user *entities.User) error 
 	}); err != nil {
 		return err
 	}
-
-	// if err := r.redisCache.Get(ctx, cacheKey2, &users); err == nil {
-	// 	updated := false
-	// 	for i, u := range users {
-	// 		if u.ID == user.ID {
-	// 			users[i] = *user
-	// 			updated = true
-	// 			break
-	// 		}
-	// 	}
-
-	// 	if !updated {
-	// 		users = append(users, *user)
-	// 	}
-
-	// 	if err := r.redisCache.Set(&cache.Item{
-	// 		Ctx:   ctx,
-	// 		Key:   cacheKey2,
-	// 		Value: users,
-	// 		TTL:   10 * time.Minute,
-	// 	}); err != nil {
-	// 		return err
-	// 	}
-	// } else {
-	// 	if err := r.redisCache.Delete(ctx, cacheKey2); err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	return nil
 }
