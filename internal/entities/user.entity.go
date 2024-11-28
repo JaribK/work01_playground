@@ -18,8 +18,8 @@ type User struct {
 	Avatar             *string         `json:"avatar" gorm:"type:varchar;default:null;"`
 	TwoFactorEnabled   bool            `json:"twoFacterEnabled" gorm:"not null;default:false"`
 	TwoFactorVerified  bool            `json:"twoFacterVerified" gorm:"not null;default:false"`
-	TwoFactorToken     string          `json:"twoFacterToken" gorm:"type:varchar"`
-	TwoFactorAuthUrl   string          `json:"twoFacterAuthUrl" gorm:"type:varchar"`
+	TwoFactorToken     *string         `json:"twoFacterToken" gorm:"type:varchar;default:null;"`
+	TwoFactorAuthUrl   *string         `json:"twoFacterAuthUrl" gorm:"type:varchar;default:null;"`
 	RoleId             *uuid.UUID      `json:"roleId" gorm:"type:uuid"`
 	Role               Role            `json:"role"`
 	ForgotPasswordCode string          `json:"forgotPasswordCode" gorm:"type:varchar"`

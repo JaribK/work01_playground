@@ -31,8 +31,9 @@ func (h *HttpFeatureHandler) CreateFeatureHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "create feature successful.",
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":           "create feature successful.",
+		"created featureId": feature.ID,
 	})
 
 }
@@ -53,7 +54,7 @@ func (h *HttpFeatureHandler) GetFeatureByIdHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(feature)
+	return c.Status(fiber.StatusOK).JSON(feature)
 }
 
 func (h *HttpFeatureHandler) GetAllFeaturePermissionsHandler(c *fiber.Ctx) error {
@@ -61,22 +62,22 @@ func (h *HttpFeatureHandler) GetAllFeaturePermissionsHandler(c *fiber.Ctx) error
 	features, err := h.featureUseCase.GetAllRoleFeatures(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to fetch features.",
+			"error": err.Error(),
 		})
 	}
 
-	return c.JSON(features)
+	return c.Status(fiber.StatusOK).JSON(features)
 }
 
 func (h *HttpFeatureHandler) GetAllFeaturesDefaultHandler(c *fiber.Ctx) error {
 	features, err := h.featureUseCase.GetAllFeaturesDefault()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to fetch features.",
+			"error": err.Error(),
 		})
 	}
 
-	return c.JSON(features)
+	return c.Status(fiber.StatusOK).JSON(features)
 }
 
 func (h *HttpFeatureHandler) UpdateFeatureHandler(c *fiber.Ctx) error {
@@ -103,9 +104,9 @@ func (h *HttpFeatureHandler) UpdateFeatureHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message":    "update feature successful.",
-		"ID feature": feature.ID,
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":           "update feature successful.",
+		"updated featureId": feature.ID,
 	})
 }
 
@@ -123,8 +124,8 @@ func (h *HttpFeatureHandler) DeleteFeatureHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message":    "detele feature successful.",
-		"ID feature": id,
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":           "detele feature successful.",
+		"deleted featureId": id,
 	})
 }

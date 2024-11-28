@@ -32,7 +32,7 @@ func (h *HttpAuthorizationHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"access_token": newAccessToken,
 	})
 }
@@ -69,7 +69,7 @@ func (h *HttpAuthorizationHandler) LoginHandler(c *fiber.Ctx) error {
 		User:         userDTO,
 	}
 
-	return c.JSON(res)
+	return c.Status(fiber.StatusOK).JSON(res)
 }
 
 func (h *HttpAuthorizationHandler) LogoutHandler(c *fiber.Ctx) error {
@@ -122,8 +122,9 @@ func (h *HttpAuthorizationHandler) CreateAuthorizationHandler(c *fiber.Ctx) erro
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "create auth successful.",
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":        "create auth successful.",
+		"created authId": auth.ID,
 	})
 
 }
@@ -143,18 +144,18 @@ func (h *HttpAuthorizationHandler) GetAuthorizationByIdHandler(c *fiber.Ctx) err
 		})
 	}
 
-	return c.JSON(auth)
+	return c.Status(fiber.StatusOK).JSON(auth)
 }
 
 func (h *HttpAuthorizationHandler) GetAllAuthorizationsHandler(c *fiber.Ctx) error {
 	auths, err := h.authorizationUsecase.GetAllAuthorizations()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to fetch auths.",
+			"error": err.Error(),
 		})
 	}
 
-	return c.JSON(auths)
+	return c.Status(fiber.StatusOK).JSON(auths)
 }
 
 func (h *HttpAuthorizationHandler) UpdateAuthorizationHandler(c *fiber.Ctx) error {
@@ -185,9 +186,9 @@ func (h *HttpAuthorizationHandler) UpdateAuthorizationHandler(c *fiber.Ctx) erro
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "update auth successful.",
-		"ID auth": auth.ID,
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":        "update auth successful.",
+		"updated authId": auth.ID,
 	})
 }
 
@@ -210,8 +211,8 @@ func (h *HttpAuthorizationHandler) DeleteAuthorizationHandler(c *fiber.Ctx) erro
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "detele auth successful.",
-		"ID auth": id,
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":        "detele auth successful.",
+		"deleted authId": id,
 	})
 }

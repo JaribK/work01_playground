@@ -138,10 +138,10 @@ func (r *authorizationRepository) GetUserByIdModify(id uuid.UUID) (*models.ResUs
 		RoleId:            *user.RoleId,
 		RoleName:          user.Role.Name,
 		RoleLevel:         user.Role.Level,
-		TwoFactorAuthUrl:  user.TwoFactorAuthUrl,
 		TwoFactorEnabled:  user.TwoFactorEnabled,
-		TwoFactorToken:    user.TwoFactorToken,
 		TwoFactorVerified: user.TwoFactorVerified,
+		TwoFactorAuthUrl:  *user.TwoFactorAuthUrl,
+		TwoFactorToken:    *user.TwoFactorToken,
 		Features:          mergedPermissions,
 	}
 

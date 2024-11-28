@@ -140,8 +140,8 @@ func (h *HttpUserHandler) UpdateUserHandler(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":             "update user successful.",
-		"updated user(Email)": user.Email,
+		"message":        "update user successful.",
+		"updated userId": id,
 	})
 }
 
@@ -166,7 +166,7 @@ func (h *HttpUserHandler) DeleteUserHandler(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "delete user successful.",
-		"ID user": id,
+		"message":        "delete user successful.",
+		"deleted userId": id,
 	})
 }

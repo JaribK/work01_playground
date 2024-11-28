@@ -73,8 +73,8 @@ func (r *userRepository) GetAllNoPage() ([]models.ResUsersNoPage, error) {
 			Avatar:             user.Avatar,
 			TwoFactorEnabled:   user.TwoFactorEnabled,
 			TwoFactorVerified:  user.TwoFactorVerified,
-			TwoFactorToken:     user.TwoFactorToken,
-			TwoFactorAuthUrl:   user.TwoFactorAuthUrl,
+			TwoFactorToken:     *user.TwoFactorToken,
+			TwoFactorAuthUrl:   *user.TwoFactorAuthUrl,
 			RoleId:             user.RoleId,
 			Role:               user.Role,
 			ForgotPasswordCode: user.ForgotPasswordCode,
@@ -146,10 +146,10 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.Res
 		RoleId:            user.Role.ID,
 		RoleName:          user.Role.Name,
 		RoleLevel:         user.Role.Level,
-		TwoFactorAuthUrl:  user.TwoFactorAuthUrl,
 		TwoFactorEnabled:  user.TwoFactorEnabled,
-		TwoFactorToken:    user.TwoFactorToken,
 		TwoFactorVerified: user.TwoFactorVerified,
+		TwoFactorAuthUrl:  *user.TwoFactorAuthUrl,
+		TwoFactorToken:    *user.TwoFactorToken,
 		Features:          mergedPermissions,
 	}
 

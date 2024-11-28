@@ -37,8 +37,9 @@ func (h *HttpRoleHandler) CreateRoleHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "create role successful.",
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":      "create role successful.",
+		"created role": role.Name,
 	})
 
 }
@@ -59,7 +60,7 @@ func (h *HttpRoleHandler) GetRoleByIdHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(role)
+	return c.Status(fiber.StatusOK).JSON(role)
 }
 
 func (h *HttpRoleHandler) GetAllRolesModifyHandler(c *fiber.Ctx) error {
@@ -71,7 +72,7 @@ func (h *HttpRoleHandler) GetAllRolesModifyHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(roles)
+	return c.Status(fiber.StatusOK).JSON(roles)
 }
 
 func (h *HttpRoleHandler) GetAllRolesDefaultHandler(c *fiber.Ctx) error {
@@ -82,7 +83,7 @@ func (h *HttpRoleHandler) GetAllRolesDefaultHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(roles)
+	return c.Status(fiber.StatusOK).JSON(roles)
 }
 
 func (h *HttpRoleHandler) GetAllRolesDropdownHandler(c *fiber.Ctx) error {
@@ -94,7 +95,7 @@ func (h *HttpRoleHandler) GetAllRolesDropdownHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(roles)
+	return c.Status(fiber.StatusOK).JSON(roles)
 }
 
 func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
@@ -126,9 +127,9 @@ func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "update role successful.",
-		"ID role": role.ID,
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":        "update role successful.",
+		"updated roleId": role.ID,
 	})
 }
 
@@ -152,8 +153,8 @@ func (h *HttpRoleHandler) DeleteRoleHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "detele role successful.",
-		"ID role": id,
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":        "detele role successful.",
+		"deleted roleId": id,
 	})
 }
