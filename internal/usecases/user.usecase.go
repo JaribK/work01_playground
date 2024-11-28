@@ -15,8 +15,9 @@ import (
 type UserUsecase interface {
 	CreateUser(user entities.User) error
 	GetUserById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error)
+	GetUserByIdCheckRole(id uuid.UUID) (*entities.User, error)
 	GetAllUsersNoPage() ([]models.ResUsersNoPage, error)
-	GetAllUsers(ctx context.Context, page, size int, roleId, isActive string) (models.Pagination, error)
+	GetAllUsersWithPage(ctx context.Context, page, size int, roleId, isActive string) (models.Pagination, error)
 	UpdateUser(ctx context.Context, user entities.User) error
 	DeleteUser(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error
 }
@@ -41,6 +42,15 @@ func (s *userUsecase) CreateUser(user entities.User) error {
 	return nil
 }
 
+func (s *userUsecase) GetUserByIdCheckRole(id uuid.UUID) (*entities.User, error) {
+	roleOfUser, err := s.repo.GetRoleUserById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return roleOfUser, nil
+}
+
 func (s *userUsecase) GetUserById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error) {
 	user, err := s.repo.GetById(ctx, id)
 	if err != nil {
@@ -50,8 +60,8 @@ func (s *userUsecase) GetUserById(ctx context.Context, id uuid.UUID) (*models.Re
 	return user, nil
 }
 
-func (s *userUsecase) GetAllUsers(ctx context.Context, page, size int, roleId, isActive string) (models.Pagination, error) {
-	users, total, err := s.repo.GetAll(ctx, page, size, roleId, isActive)
+func (s *userUsecase) GetAllUsersWithPage(ctx context.Context, page, size int, roleId, isActive string) (models.Pagination, error) {
+	users, total, err := s.repo.GetAllWithPage(ctx, page, size, roleId, isActive)
 	if err != nil {
 		return models.Pagination{}, err
 	}
@@ -81,17 +91,17 @@ func (s *userUsecase) UpdateUser(ctx context.Context, user entities.User) error 
 }
 
 func (s *userUsecase) DeleteUser(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error {
-	user, err := s.repo.GetById(ctx, id)
+	check, err := s.repo.IsSuperAdministrator(id)
 	if err != nil {
 		return err
 	}
 
-	if user.RoleName == "Super Administrator" {
-		return fmt.Errorf("can't remove user that's have role super administrator")
-	}
-
-	if err := s.repo.Delete(ctx, id, deleteBy); err != nil {
-		return err
+	if !check {
+		if err := s.repo.Delete(ctx, id, deleteBy); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("can not delete user that's have role super admin")
 	}
 
 	return nil

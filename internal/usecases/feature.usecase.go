@@ -12,8 +12,8 @@ import (
 type FeatureUsecase interface {
 	CreateFeature(feature entities.Feature) error
 	GetFeatureById(ctx context.Context, id uuid.UUID) (*models.FeatureDTO, error)
-	GetAllFeatures() ([]entities.Feature, error)
-	GetAllFeaturePermissions(ctx context.Context) ([]models.FeatureDTO, error)
+	GetAllFeaturesDefault() ([]entities.Feature, error)
+	GetAllRoleFeatures(ctx context.Context) ([]models.FeatureDTO, error)
 	UpdateFeature(ctx context.Context, feature entities.Feature) error
 	DeleteFeature(id uuid.UUID) error
 }
@@ -42,16 +42,16 @@ func (s *featureUsecase) GetFeatureById(ctx context.Context, id uuid.UUID) (*mod
 	return feature, nil
 }
 
-func (s *featureUsecase) GetAllFeaturePermissions(ctx context.Context) ([]models.FeatureDTO, error) {
-	features, err := s.repo.GetAllFeaturePermission(ctx)
+func (s *featureUsecase) GetAllRoleFeatures(ctx context.Context) ([]models.FeatureDTO, error) {
+	features, err := s.repo.GetAllRoleFeatures(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return features, nil
 }
 
-func (s *featureUsecase) GetAllFeatures() ([]entities.Feature, error) {
-	features, err := s.repo.GetAll()
+func (s *featureUsecase) GetAllFeaturesDefault() ([]entities.Feature, error) {
+	features, err := s.repo.GetAllDefault()
 	if err != nil {
 		return nil, err
 	}

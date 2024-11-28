@@ -63,7 +63,7 @@ func (s *userGrpcServiceServer) GetUserById(ctx context.Context, req *GetUserByI
 		LastName:    user.LastName,
 		Email:       user.Email,
 		PhoneNumber: user.PhoneNumber,
-		Avatar:      user.Avatar,
+		Avatar:      *user.Avatar,
 		RoleId:      roleId,
 		RoleName:    user.RoleName,
 	}
@@ -86,7 +86,7 @@ func (s *userGrpcServiceServer) GetAllUser(ctx context.Context, req *GetAllUserR
 			Email:       user.Email,
 			PhoneNumber: user.PhoneNumber,
 			IsActive:    user.IsActive,
-			Avatar:      user.Avatar,
+			Avatar:      *user.Avatar,
 			RoleName:    user.Role.Name,
 		})
 	}

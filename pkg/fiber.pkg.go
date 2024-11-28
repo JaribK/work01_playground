@@ -32,9 +32,10 @@ func RunFiber(gormDatabase *gorm.DB, redisClient *redis.Client) {
 	authService.Post("/logout", authHandler.LogoutHandler)
 
 	//users
+	app.Post("/createusersnoauth", userHandler.CreateUserHandler)
 	api.Get("/users/default", userHandler.GetAllUsersNoPageHandler)
 	api.Get("/users/me", userHandler.GetUserByIdHandler)
-	api.Get("/users", userHandler.GetAllUsersHandler)
+	api.Get("/users", userHandler.GetAllUsersWithPageHandler)
 	api.Post("/users", userHandler.CreateUserHandler)
 	api.Put("/users/:id", userHandler.UpdateUserHandler)
 	api.Delete("/users/:id", userHandler.DeleteUserHandler)
@@ -44,9 +45,9 @@ func RunFiber(gormDatabase *gorm.DB, redisClient *redis.Client) {
 	roleHandler := handlers.NewHttpRoleHandler(roleUsecase)
 
 	//roles
-	api.Get("/roles/default", roleHandler.GetAllRolesNoModifyHandler)
+	api.Get("/roles/default", roleHandler.GetAllRolesDefaultHandler)
 	api.Get("/roles/:id", roleHandler.GetRoleByIdHandler)
-	api.Get("/roles", roleHandler.GetAllRolesHandler)
+	api.Get("/roles", roleHandler.GetAllRolesModifyHandler)
 	api.Get("/rolesdropdown", roleHandler.GetAllRolesDropdownHandler)
 	api.Post("/roles", roleHandler.CreateRoleHandler)
 	api.Put("/roles/:id", roleHandler.UpdateRoleHandler)
@@ -57,34 +58,23 @@ func RunFiber(gormDatabase *gorm.DB, redisClient *redis.Client) {
 	featureHandler := handlers.NewHttpFeatureHandler(featureUsecase)
 
 	//features
-	api.Get("/features/default", featureHandler.GetAllFeaturesHandler)
+	api.Get("/features/default", featureHandler.GetAllFeaturesDefaultHandler)
 	api.Get("/features/:id", featureHandler.GetFeatureByIdHandler)
 	api.Get("/features", featureHandler.GetAllFeaturePermissionsHandler)
 	api.Post("/features", featureHandler.CreateFeatureHandler)
 	api.Put("/features/:id", featureHandler.UpdateFeatureHandler)
 	api.Delete("/features/:id", featureHandler.DeleteFeatureHandler)
 
-	permissionRepo := repositories.NewPermissionRepository(gormDatabase, redisClient)
-	permissionUsecase := usecases.NewPermissionUsecase(permissionRepo)
-	permissionHandler := handlers.NewHttpPermissionHandler(permissionUsecase)
+	roleFeatureRepo := repositories.NewRoleFeatureRepository(gormDatabase, redisClient)
+	roleFeatureUsecase := usecases.NewRoleFeatureUsecase(roleFeatureRepo)
+	roleFeatureHandler := handlers.NewHttpRoleFeatureHandler(roleFeatureUsecase)
 
-	//permissions
-	api.Get("/permissions/:id", permissionHandler.GetPermissionByIdHandler)
-	api.Get("/permissions", permissionHandler.GetAllPermissionsHandler)
-	api.Post("/permissions", permissionHandler.CreatePermissionHandler)
-	api.Put("/permissions/:id", permissionHandler.UpdatePermissionHandler)
-	api.Delete("/permissions/:id", permissionHandler.DeletePermissionHandler)
-
-	rolePermissionRepo := repositories.NewRolePermissionRepository(gormDatabase, redisClient)
-	rolePermissionUsecase := usecases.NewRolePermissionUsecase(rolePermissionRepo)
-	rolePermissionHandler := handlers.NewHttpRolePermissionHandler(rolePermissionUsecase)
-
-	//rolePermissions
-	api.Get("/rolePermissions/:id", rolePermissionHandler.GetRolePermissionByIdHandler)
-	api.Get("/rolePermissions", rolePermissionHandler.GetAllRolePermissionsHandler)
-	api.Post("/rolePermissions", rolePermissionHandler.CreateRolePermissionHandler)
-	api.Put("/rolePermissions/:id", rolePermissionHandler.UpdateRolePermissionHandler)
-	api.Delete("/rolePermissions/:id", rolePermissionHandler.DeleteRolePermissionHandler)
+	//roleFeatures
+	api.Get("/roleFeatures/:id", roleFeatureHandler.GetRoleFeatureByIdHandler)
+	api.Get("/roleFeatures", roleFeatureHandler.GetAllRoleFeaturesHandler)
+	api.Post("/roleFeatures", roleFeatureHandler.CreateRoleFeatureHandler)
+	api.Put("/roleFeatures/:id", roleFeatureHandler.UpdateRoleFeatureHandler)
+	api.Delete("/roleFeatures/:id", roleFeatureHandler.DeleteRoleFeatureHandler)
 
 	app.Listen(":8080")
 }

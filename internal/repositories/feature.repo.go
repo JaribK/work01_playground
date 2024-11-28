@@ -21,8 +21,8 @@ type featureRepository struct {
 type FeatureRepository interface {
 	Create(user *entities.Feature) error
 	GetById(ctx context.Context, id uuid.UUID) (*models.FeatureDTO, error)
-	GetAll() ([]entities.Feature, error)
-	GetAllFeaturePermission(ctx context.Context) ([]models.FeatureDTO, error)
+	GetAllDefault() ([]entities.Feature, error)
+	GetAllRoleFeatures(ctx context.Context) ([]models.FeatureDTO, error)
 	Update(ctx context.Context, feature *entities.Feature) error
 	Delete(id uuid.UUID) error
 }
@@ -43,59 +43,46 @@ func (r *featureRepository) Create(feature *entities.Feature) error {
 }
 
 func (r *featureRepository) GetById(ctx context.Context, id uuid.UUID) (*models.FeatureDTO, error) {
-	var permission entities.Permission
-	var featurePermission models.FeatureDTO
+	var obj entities.RoleFeature
+	var featureRole models.FeatureDTO
 
 	cacheKey := fmt.Sprintf("feature:%s", id)
-	if err := r.redisCache.Get(ctx, cacheKey, &featurePermission); err == nil {
-		return &featurePermission, nil
+	if err := r.redisCache.Get(ctx, cacheKey, &featureRole); err == nil {
+		return &featureRole, nil
 	}
 
-	if err := r.db.Model(&entities.Permission{}).Preload("Feature").Joins("RIGHT JOIN features ON permissions.feature_id = features.id").Where("permissions.feature_id=?", id).First(&permission).Error; err != nil {
+	if err := r.db.Model(&entities.RoleFeature{}).Preload("Feature").Joins("LEFT JOIN features ON role_features.feature_id = features.id").Where("role_features.feature_id=?", id).First(&obj).Error; err != nil {
 		return nil, err
 	}
 
-	featurePermission = models.FeatureDTO{
-		FeatureDTOID: permission.Feature.ID,
-		FeatureName:  permission.Feature.Name,
-		IsView:       permission.ReadAccess,
-		IsAdd:        permission.CreateAccess,
-		IsEdit:       permission.UpdateAccess,
-		IsDelete:     permission.DeleteAccess,
+	featureRole = models.FeatureDTO{
+		FeatureDTOID: obj.Feature.ID,
+		FeatureName:  obj.Feature.Name,
+		IsView:       obj.IsView,
+		IsAdd:        obj.IsAdd,
+		IsEdit:       obj.IsEdit,
+		IsDelete:     obj.IsDelete,
 	}
 
 	if err := r.redisCache.Set(&cache.Item{
 		Ctx:   ctx,
 		Key:   cacheKey,
-		Value: featurePermission,
+		Value: featureRole,
 		TTL:   time.Minute * 10,
 	}); err != nil {
 		return nil, err
 	}
 
-	return &featurePermission, nil
+	return &featureRole, nil
 }
 
-func (r *featureRepository) GetAll() ([]entities.Feature, error) {
+func (r *featureRepository) GetAllDefault() ([]entities.Feature, error) {
 	var features []entities.Feature
-
-	// cacheKey := fmt.Sprintln("feature_list")
-	// if err := r.redisCache.Get(ctx, cacheKey, &features); err == nil {
-	// 	return features, nil
-	// }
 
 	if err := r.db.Find(&features).Error; err != nil {
 		return nil, err
 	}
 
-	// if err := r.redisCache.Set(&cache.Item{
-	// 	Ctx:   ctx,
-	// 	Key:   cacheKey,
-	// 	Value: features,
-	// 	TTL:   time.Minute * 10,
-	// }); err != nil {
-	// 	return nil, err
-	// }
 	return features, nil
 }
 
@@ -120,33 +107,33 @@ func (r *featureRepository) Update(ctx context.Context, feature *entities.Featur
 
 	// //query again
 
-	cacheKey2 := "permission_feature_list"
+	cacheKey2 := "role_feature_list"
 	if err := r.redisCache.Delete(ctx, cacheKey2); err != nil {
 		return err
 	}
 
-	var permissions []entities.Permission
+	var roleFeatures []entities.RoleFeature
+	var featureRole []models.FeatureDTO
 
-	if err := r.db.Model(&entities.Permission{}).Preload("Feature").Joins("LEFT JOIN features ON permissions.feature_id = features.id").Find(&permissions).Error; err != nil {
+	if err := r.db.Model(&entities.RoleFeature{}).Preload("Feature").Joins("LEFT JOIN features ON role_features.feature_id = features.id").Find(&roleFeatures).Error; err != nil {
 		return err
 	}
 
-	var featurePermission []models.FeatureDTO
-	for _, permission := range permissions {
-		featurePermission = append(featurePermission, models.FeatureDTO{
-			FeatureDTOID: permission.Feature.ID,
-			FeatureName:  permission.Feature.Name,
-			IsView:       permission.ReadAccess,
-			IsAdd:        permission.CreateAccess,
-			IsEdit:       permission.UpdateAccess,
-			IsDelete:     permission.DeleteAccess,
+	for _, obj := range roleFeatures {
+		featureRole = append(featureRole, models.FeatureDTO{
+			FeatureDTOID: obj.Feature.ID,
+			FeatureName:  obj.Feature.Name,
+			IsView:       obj.IsView,
+			IsAdd:        obj.IsAdd,
+			IsEdit:       obj.IsEdit,
+			IsDelete:     obj.IsDelete,
 		})
 	}
 
 	if err := r.redisCache.Set(&cache.Item{
 		Ctx:   ctx,
 		Key:   cacheKey2,
-		Value: featurePermission,
+		Value: featureRole,
 		TTL:   time.Minute * 10,
 	}); err != nil {
 		return err
@@ -155,41 +142,41 @@ func (r *featureRepository) Update(ctx context.Context, feature *entities.Featur
 	return nil
 }
 
-func (r *featureRepository) GetAllFeaturePermission(ctx context.Context) ([]models.FeatureDTO, error) {
-	var featurePermission []models.FeatureDTO
-	var permissions []entities.Permission
+func (r *featureRepository) GetAllRoleFeatures(ctx context.Context) ([]models.FeatureDTO, error) {
+	var featureRole []models.FeatureDTO
+	var roleFeatures []entities.RoleFeature
 
-	cacheKey1 := "permission_feature_list"
-	if err := r.redisCache.Get(ctx, cacheKey1, &featurePermission); err == nil {
-		return featurePermission, nil
+	cacheKey1 := "role_feature_list"
+	if err := r.redisCache.Get(ctx, cacheKey1, &featureRole); err == nil {
+		return featureRole, nil
 	}
 
-	if err := r.db.Model(&entities.Permission{}).Preload("Feature").Joins("LEFT JOIN features ON permissions.feature_id = features.id").Find(&permissions).Error; err != nil {
+	if err := r.db.Model(&entities.RoleFeature{}).Preload("Feature").Joins("LEFT JOIN features ON role_features.feature_id = features.id").Find(&roleFeatures).Error; err != nil {
 		return nil, err
 	}
 
-	for _, permission := range permissions {
-		featurePermission = append(featurePermission, models.FeatureDTO{
-			FeatureDTOID: permission.Feature.ID,
-			FeatureName:  permission.Feature.Name,
-			IsView:       permission.ReadAccess,
-			IsAdd:        permission.CreateAccess,
-			IsEdit:       permission.UpdateAccess,
-			IsDelete:     permission.DeleteAccess,
+	for _, obj := range roleFeatures {
+		featureRole = append(featureRole, models.FeatureDTO{
+			FeatureDTOID: obj.Feature.ID,
+			FeatureName:  obj.Feature.Name,
+			IsView:       obj.IsView,
+			IsAdd:        obj.IsAdd,
+			IsEdit:       obj.IsEdit,
+			IsDelete:     obj.IsDelete,
 		})
 	}
 
-	cacheKey2 := "permission_feature_list"
+	cacheKey2 := "role_feature_list"
 	if err := r.redisCache.Set(&cache.Item{
 		Ctx:   ctx,
 		Key:   cacheKey2,
-		Value: featurePermission,
+		Value: featureRole,
 		TTL:   time.Minute * 10,
 	}); err != nil {
 		return nil, err
 	}
 
-	return featurePermission, nil
+	return featureRole, nil
 }
 
 func (r *featureRepository) Delete(id uuid.UUID) error {

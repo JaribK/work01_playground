@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	"work01/internal/entities"
+	"work01/internal/models"
 
 	"github.com/go-redis/cache/v9"
 	"github.com/google/uuid"
@@ -24,6 +25,7 @@ type AuthorizationRepository interface {
 	Update(auth *entities.Authorization) error
 	Delete(id uuid.UUID, deleteBy uuid.UUID) error
 	GetUserById(id uuid.UUID) (*entities.User, error)
+	GetUserByIdModify(id uuid.UUID) (*models.ResUserDTO, error)
 	GetUserByEmail(email string) (*entities.User, error)
 	CheckAuthorizationByUserID(id uuid.UUID) bool
 	GetAuthorizationByUserID(id uuid.UUID) (*entities.Authorization, error)
@@ -90,17 +92,68 @@ func (r *authorizationRepository) Delete(id uuid.UUID, deleteBy uuid.UUID) error
 
 func (r *authorizationRepository) GetUserByEmail(email string) (*entities.User, error) {
 	var user entities.User
-	if err := r.db.Preload("Role.Permissions.Feature").Where("email=?", email).First(&user).Error; err != nil {
+	if err := r.db.Preload("Role.Features").Where("email=?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-func (r *authorizationRepository) GetUserById(id uuid.UUID) (*entities.User, error) {
+func (r *authorizationRepository) GetUserByIdModify(id uuid.UUID) (*models.ResUserDTO, error) {
 	var user entities.User
-	if err := r.db.Preload("Role.Permissions.Feature").Where("id=?", id).First(&user).Error; err != nil {
+	var roleFeature entities.RoleFeature
+	if err := r.db.Preload("Role.Features").Where("id=?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
+
+	if err := r.db.Where("role_id=?", user.Role.ID).First(&roleFeature).Error; err != nil {
+		return nil, err
+	}
+
+	var mergedPermissions []models.FeatureDTODetails
+	for _, Feature := range user.Role.Features {
+		mergedPermissions = append(mergedPermissions, models.FeatureDTODetails{
+			ID:           Feature.ID,
+			Name:         Feature.Name,
+			ParentMenuId: Feature.ParentMenuId,
+			MenuIcon:     Feature.MenuIcon,
+			MenuNameTh:   Feature.MenuNameTh,
+			MenuNameEn:   Feature.MenuNameEn,
+			MenuSlug:     Feature.MenuSlug,
+			MenuSeqNo:    Feature.MenuSeqNo,
+			IsActive:     Feature.IsActive,
+			IsAdd:        roleFeature.IsAdd,
+			IsView:       roleFeature.IsView,
+			IsEdit:       roleFeature.IsEdit,
+			IsDelete:     roleFeature.IsDelete,
+		})
+	}
+
+	userDTO := models.ResUserDTO{
+		UserID:            user.ID,
+		Email:             user.Email,
+		FirstName:         user.FirstName,
+		LastName:          user.LastName,
+		PhoneNumber:       user.PhoneNumber,
+		Avatar:            user.Avatar,
+		RoleId:            *user.RoleId,
+		RoleName:          user.Role.Name,
+		RoleLevel:         user.Role.Level,
+		TwoFactorAuthUrl:  user.TwoFactorAuthUrl,
+		TwoFactorEnabled:  user.TwoFactorEnabled,
+		TwoFactorToken:    user.TwoFactorToken,
+		TwoFactorVerified: user.TwoFactorVerified,
+		Features:          mergedPermissions,
+	}
+
+	return &userDTO, nil
+}
+
+func (r *authorizationRepository) GetUserById(id uuid.UUID) (*entities.User, error) {
+	var user entities.User
+	if err := r.db.Preload("Role.Features").Where("id=?", id).First(&user).Error; err != nil {
+		return nil, err
+	}
+
 	return &user, nil
 }
 

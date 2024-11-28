@@ -8,25 +8,29 @@ import (
 )
 
 type Role struct {
-	ID          uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;"`
-	Name        string         `json:"name" gorm:"not null;unique"`
-	Level       int32          `json:"level" gorm:"not null;default:0"`
-	CreatedAt   time.Time      `json:"createdAt"`
-	CreatedBy   uuid.UUID      `json:"createdBy,omitempty" gorm:"type:uuid"`
-	UpdatedAt   time.Time      `json:"updatedAt"`
-	UpdatedBy   uuid.UUID      `json:"updatedBy" gorm:"type:uuid"`
-	DeletedAt   gorm.DeletedAt `json:"-"`
-	DeletedBy   *uuid.UUID     `json:"-" gorm:"type:uuid;index;"`
-	Users       []User         `json:"-"`
-	Permissions []Permission   `json:"permissions" gorm:"many2many:role_permissions;"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;"`
+	Name      string         `json:"name" gorm:"not null;unique"`
+	Level     int32          `json:"level" gorm:"not null;default:0"`
+	CreatedAt time.Time      `json:"createdAt"`
+	CreatedBy uuid.UUID      `json:"createdBy,omitempty" gorm:"type:uuid"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	UpdatedBy uuid.UUID      `json:"updatedBy" gorm:"type:uuid"`
+	DeletedAt gorm.DeletedAt `json:"-"`
+	DeletedBy *uuid.UUID     `json:"-" gorm:"type:uuid;index;"`
+	Users     []User         `json:"-"`
+	Features  []Feature      `json:"features" gorm:"many2many:role_features;"`
 }
 
-type RolePermission struct {
+type RoleFeature struct {
 	ID     uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;"`
-	RoleID uuid.UUID `json:"roleId" gorm:"type:uuid;primaryKey;"`
+	RoleId uuid.UUID `json:"roleId" gorm:"type:uuid;primaryKey;"`
 	// Role Role
-	PermissionID uuid.UUID `json:"permissionId" gorm:"type:uuid;primaryKey;"`
-	// Permission Permission
+	FeatureId uuid.UUID `json:"featureId" gorm:"type:uuid;primaryKey;"`
+	Feature   Feature   `json:"features"`
+	IsAdd     *bool     `json:"isAdd" gorm:"default:false;"`
+	IsView    *bool     `json:"isView" gorm:"default:false;"`
+	IsEdit    *bool     `json:"isEdit" gorm:"default:false;"`
+	IsDelete  *bool     `json:"isDelete" gorm:"default:false;"`
 }
 
 // type Permission struct {

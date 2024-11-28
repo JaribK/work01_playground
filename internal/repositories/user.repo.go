@@ -22,8 +22,9 @@ type userRepository struct {
 type UserRepository interface {
 	Create(user *entities.User) error
 	GetById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error)
+	GetRoleUserById(id uuid.UUID) (*entities.User, error)
 	GetAllNoPage() ([]models.ResUsersNoPage, error)
-	GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]models.ResAllUserDTOs, int64, error)
+	GetAllWithPage(ctx context.Context, page, size int, roleId, isActive string) ([]models.ResAllUserDTOs, int64, error)
 	Update(ctx context.Context, user *entities.User) error
 	Delete(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error
 	GetUserByEmail(email string) (*entities.User, error)
@@ -31,6 +32,7 @@ type UserRepository interface {
 	IsPhoneExists(phone string) (bool, error)
 	IsEmailExistsForUpdate(email string, id uuid.UUID) (bool, error)
 	IsPhoneExistsForUpdate(phone string, id uuid.UUID) (bool, error)
+	IsSuperAdministrator(id uuid.UUID) (bool, error)
 }
 
 func NewUserRepository(db *gorm.DB, redisClient *redis.Client) UserRepository {
@@ -50,13 +52,14 @@ func (r *userRepository) Create(user *entities.User) error {
 	if err = r.db.Create(&user).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (r *userRepository) GetAllNoPage() ([]models.ResUsersNoPage, error) {
 	var users []entities.User
 	var resUsers []models.ResUsersNoPage
-	if err := r.db.Preload("Role.Permissions.Feature").Omit("").Find(&users).Error; err != nil {
+	if err := r.db.Preload("Role.Features").Find(&users).Error; err != nil {
 		return nil, err
 	}
 
@@ -86,10 +89,20 @@ func (r *userRepository) GetAllNoPage() ([]models.ResUsersNoPage, error) {
 	return resUsers, nil
 }
 
+func (r *userRepository) GetRoleUserById(id uuid.UUID) (*entities.User, error) {
+	var user entities.User
+	if err := r.db.Preload("Role").Where("id=?", id).First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error) {
 	var user entities.User
 	var userDTO models.ResUserDTO
-	var mergedPermissions []models.PermissionDTO
+	var roleFeature entities.RoleFeature
+	var mergedPermissions []models.FeatureDTODetails
 
 	cacheKey := fmt.Sprintf("user:%s", id)
 
@@ -97,25 +110,29 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.Res
 		return &userDTO, nil
 	}
 
-	if err := r.db.Preload("Role.Permissions.Feature").Where("id=?", id).First(&user).Error; err != nil {
+	if err := r.db.Preload("Role.Features").Where("id=?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
 
-	for _, permission := range user.Role.Permissions {
-		mergedPermissions = append(mergedPermissions, models.PermissionDTO{
-			ID:           permission.Feature.ID,
-			Name:         permission.Feature.Name,
-			ParentMenuId: permission.Feature.ParentMenuId,
-			MenuIcon:     permission.Feature.MenuIcon,
-			MenuNameTh:   permission.Feature.MenuNameTh,
-			MenuNameEn:   permission.Feature.MenuNameEn,
-			MenuSlug:     permission.Feature.MenuSlug,
-			MenuSeqNo:    permission.Feature.MenuSeqNo,
-			IsActive:     permission.Feature.IsActive,
-			CreateAccess: permission.CreateAccess,
-			ReadAccess:   permission.ReadAccess,
-			UpdateAccess: permission.UpdateAccess,
-			DeleteAccess: permission.DeleteAccess,
+	if err := r.db.Where("role_id=?", user.Role.ID).First(&roleFeature).Error; err != nil {
+		return nil, err
+	}
+
+	for _, Feature := range user.Role.Features {
+		mergedPermissions = append(mergedPermissions, models.FeatureDTODetails{
+			ID:           Feature.ID,
+			Name:         Feature.Name,
+			ParentMenuId: Feature.ParentMenuId,
+			MenuIcon:     Feature.MenuIcon,
+			MenuNameTh:   Feature.MenuNameTh,
+			MenuNameEn:   Feature.MenuNameEn,
+			MenuSlug:     Feature.MenuSlug,
+			MenuSeqNo:    Feature.MenuSeqNo,
+			IsActive:     Feature.IsActive,
+			IsAdd:        roleFeature.IsAdd,
+			IsView:       roleFeature.IsView,
+			IsEdit:       roleFeature.IsEdit,
+			IsDelete:     roleFeature.IsDelete,
 		})
 	}
 
@@ -133,7 +150,7 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.Res
 		TwoFactorEnabled:  user.TwoFactorEnabled,
 		TwoFactorToken:    user.TwoFactorToken,
 		TwoFactorVerified: user.TwoFactorVerified,
-		Permissions:       mergedPermissions,
+		Features:          mergedPermissions,
 	}
 
 	if err := r.redisCache.Set(&cache.Item{
@@ -148,7 +165,7 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.Res
 	return &userDTO, nil
 }
 
-func (r *userRepository) GetAll(ctx context.Context, page, size int, roleId, isActive string) ([]models.ResAllUserDTOs, int64, error) {
+func (r *userRepository) GetAllWithPage(ctx context.Context, page, size int, roleId, isActive string) ([]models.ResAllUserDTOs, int64, error) {
 	var users []entities.User
 	var total int64
 	var userDTOs []models.ResAllUserDTOs
@@ -321,4 +338,17 @@ func (r *userRepository) IsPhoneExistsForUpdate(phone string, id uuid.UUID) (boo
 		return false, nil
 	}
 	return true, nil
+}
+
+func (r *userRepository) IsSuperAdministrator(id uuid.UUID) (bool, error) {
+	var user entities.User
+	if err := r.db.Preload("Role").Where("id=?", id).First(&user).Error; err != nil {
+		return false, nil
+	}
+
+	if user.Role.Name == "Super Administrator" {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }

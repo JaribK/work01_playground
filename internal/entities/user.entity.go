@@ -15,7 +15,7 @@ type User struct {
 	Email              string          `json:"email" gorm:"type:varchar;not null"`
 	PhoneNumber        string          `json:"phoneNumber" gorm:"type:varchar;not null"`
 	Password           string          `json:"password" gorm:"type:varchar;not null"`
-	Avatar             string          `json:"avatar" gorm:"type:varchar;"`
+	Avatar             *string         `json:"avatar" gorm:"type:varchar;default:null;"`
 	TwoFactorEnabled   bool            `json:"twoFacterEnabled" gorm:"not null;default:false"`
 	TwoFactorVerified  bool            `json:"twoFacterVerified" gorm:"not null;default:false"`
 	TwoFactorToken     string          `json:"twoFacterToken" gorm:"type:varchar"`

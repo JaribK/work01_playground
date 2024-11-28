@@ -20,7 +20,7 @@ type roleRepository struct {
 
 type RoleRepository interface {
 	GetById(ctx context.Context, id uuid.UUID) (*entities.Role, error)
-	GetAll() ([]entities.Role, error)
+	GetAllDefault() ([]entities.Role, error)
 	GetAllModify(ctx context.Context) ([]models.ResRoleDetails, error)
 	Create(role *entities.Role) error
 	Update(ctx context.Context, role *entities.Role) error
@@ -50,7 +50,7 @@ func (r *roleRepository) GetById(ctx context.Context, id uuid.UUID) (*entities.R
 		return &roleOjb, nil
 	}
 
-	if err := r.db.Preload("Permissions.Feature").Where("id=?", id).First(&roleOjb).Error; err != nil {
+	if err := r.db.Preload("Features").Where("id=?", id).First(&roleOjb).Error; err != nil {
 		return nil, err
 	}
 
@@ -76,7 +76,7 @@ func (r *roleRepository) GetAllModify(ctx context.Context) ([]models.ResRoleDeta
 		return roleRes, nil
 	}
 
-	if err := r.db.Preload("Permissions").Preload("Users").Find(&roleOjbs).Error; err != nil {
+	if err := r.db.Preload("Features").Preload("Users").Find(&roleOjbs).Error; err != nil {
 		return nil, err
 	}
 
@@ -101,10 +101,10 @@ func (r *roleRepository) GetAllModify(ctx context.Context) ([]models.ResRoleDeta
 	return roleRes, nil
 }
 
-func (r *roleRepository) GetAll() ([]entities.Role, error) {
+func (r *roleRepository) GetAllDefault() ([]entities.Role, error) {
 	var roleOjbs []entities.Role
 
-	if err := r.db.Preload("Permissions").Preload("Users").Find(&roleOjbs).Error; err != nil {
+	if err := r.db.Preload("Features").Preload("Users").Find(&roleOjbs).Error; err != nil {
 		return nil, err
 	}
 
@@ -139,7 +139,7 @@ func (r *roleRepository) Update(ctx context.Context, role *entities.Role) error 
 		return err
 	}
 
-	if err := r.db.Preload("Permissions").Preload("Users").Find(&roleOjbs).Error; err != nil {
+	if err := r.db.Preload("Users").Find(&roleOjbs).Error; err != nil {
 		return err
 	}
 

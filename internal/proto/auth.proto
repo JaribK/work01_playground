@@ -19,11 +19,15 @@ message PermissionDTO {
     string menu_slug = 7;
     string menu_seq_no = 8;
     bool is_active = 9;
-    bool create_access = 10;
-    bool read_access = 11;
-    bool update_access = 12;
-    bool delete_access = 13;
+    // bool create_access = 10;
+    // bool read_access = 11;
+    // bool update_access = 12;
+    // bool delete_access = 13;
     optional string parent_menu_id = 14;
+    bool is_add = 15;
+    bool is_view = 16;
+    bool is_edit = 17;
+    bool is_delete = 18;
 }
 
 message User {

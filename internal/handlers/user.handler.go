@@ -21,7 +21,8 @@ func (h *HttpUserHandler) CreateUserHandler(c *fiber.Ctx) error {
 	var user entities.User
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request.",
+			"titleTh": "คำขอไม่ถูกต้อง",
+			"titleEn": "Bad Request",
 		})
 	}
 
@@ -38,8 +39,15 @@ func (h *HttpUserHandler) CreateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
+	userCheck, err := h.userUseCase.GetUserByIdCheckRole(user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "create user successful.",
+		"email":   user.Email,
+		"role":    userCheck.Role.Name,
 	})
 }
 
@@ -59,10 +67,10 @@ func (h *HttpUserHandler) GetUserByIdHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(role)
+	return c.Status(fiber.StatusOK).JSON(role)
 }
 
-func (h *HttpUserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
+func (h *HttpUserHandler) GetAllUsersWithPageHandler(c *fiber.Ctx) error {
 	ctx := c.Context()
 	page, err := strconv.Atoi(c.Query("page", "1"))
 	if err != nil {
@@ -81,7 +89,7 @@ func (h *HttpUserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
 	roleId := c.Query("roleId", "")
 	isActive := c.Query("isActive", "")
 
-	users, err := h.userUseCase.GetAllUsers(ctx, page, size, roleId, isActive)
+	users, err := h.userUseCase.GetAllUsersWithPage(ctx, page, size, roleId, isActive)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -131,9 +139,9 @@ func (h *HttpUserHandler) UpdateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "update user successful.",
-		"ID user": user.ID,
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":             "update user successful.",
+		"updated user(Email)": user.Email,
 	})
 }
 

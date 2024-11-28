@@ -22,7 +22,7 @@ type AuthorizationUsecase interface {
 	CreateAuthorization(auth entities.Authorization) error
 	GetAuthorizationById(id uuid.UUID) (*entities.Authorization, error)
 	GetAllAuthorizations() ([]entities.Authorization, error)
-	GetUserDataById(id uuid.UUID) (interface{}, error)
+	GetUserDataById(id uuid.UUID) (*models.ResUserDTO, error)
 	UpdateAuthorization(auth entities.Authorization) error
 	DeleteAuthorization(id uuid.UUID, delBy uuid.UUID) error
 	Login(email, password string) (*entities.User, *models.AuthToken, error)
@@ -50,48 +50,13 @@ func (s *authorizationUsecase) GetAuthorizationById(id uuid.UUID) (*entities.Aut
 	return auth, nil
 }
 
-func (s *authorizationUsecase) GetUserDataById(id uuid.UUID) (interface{}, error) {
-	user, err := s.repo.GetUserById(id)
+func (s *authorizationUsecase) GetUserDataById(id uuid.UUID) (*models.ResUserDTO, error) {
+	user, err := s.repo.GetUserByIdModify(id)
 	if err != nil {
 		return nil, err
 	}
 
-	var mergedPermissions []models.PermissionDTO
-	for _, permission := range user.Role.Permissions {
-		mergedPermissions = append(mergedPermissions, models.PermissionDTO{
-			ID:           permission.Feature.ID,
-			Name:         permission.Feature.Name,
-			ParentMenuId: permission.Feature.ParentMenuId,
-			MenuIcon:     permission.Feature.MenuIcon,
-			MenuNameTh:   permission.Feature.MenuNameTh,
-			MenuNameEn:   permission.Feature.MenuNameEn,
-			MenuSlug:     permission.Feature.MenuSlug,
-			MenuSeqNo:    permission.Feature.MenuSeqNo,
-			IsActive:     permission.Feature.IsActive,
-			CreateAccess: permission.CreateAccess,
-			ReadAccess:   permission.ReadAccess,
-			UpdateAccess: permission.UpdateAccess,
-			DeleteAccess: permission.DeleteAccess,
-		})
-	}
-
-	userDTO := models.ResUserDTO{
-		UserID:            user.ID,
-		Email:             user.Email,
-		FirstName:         user.FirstName,
-		LastName:          user.LastName,
-		PhoneNumber:       user.PhoneNumber,
-		Avatar:            user.Avatar,
-		RoleName:          user.Role.Name,
-		RoleLevel:         user.Role.Level,
-		TwoFactorAuthUrl:  user.TwoFactorAuthUrl,
-		TwoFactorEnabled:  user.TwoFactorEnabled,
-		TwoFactorToken:    user.TwoFactorToken,
-		TwoFactorVerified: user.TwoFactorVerified,
-		Permissions:       mergedPermissions,
-	}
-
-	return &userDTO, nil
+	return user, nil
 }
 
 func (s *authorizationUsecase) GetAllAuthorizations() ([]entities.Authorization, error) {
@@ -134,12 +99,12 @@ func (s *authorizationUsecase) Login(email, password string) (*entities.User, *m
 	}
 
 	haveauthcheck := s.repo.CheckAuthorizationByUserID(user.ID)
-	authSelect, err := s.repo.GetAuthorizationByUserID(user.ID)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	if haveauthcheck {
+		authSelect, err := s.repo.GetAuthorizationByUserID(user.ID)
+		if err != nil {
+			return nil, nil, err
+		}
 		auth := &entities.Authorization{
 			ID:           authSelect.ID,
 			AccessToken:  token.AccessToken,

@@ -24,28 +24,33 @@ func (s *authorizationServer) Login(ctx context.Context, req *LoginRequest) (*Lo
 		return nil, err
 	}
 
-	for _, permission := range user.Role.Permissions {
+	userDTO, err := s.authUsecase.GetUserDataById(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, Feature := range userDTO.Features {
 		var parentId *string
-		if permission.Feature.ParentMenuId != nil {
-			idStr := permission.Feature.ParentMenuId.String()
+		if Feature.ParentMenuId != nil {
+			idStr := Feature.ParentMenuId.String()
 			parentId = &idStr
 		} else {
 			parentId = nil
 		}
 		mergedPermissions = append(mergedPermissions, &PermissionDTO{
-			FeatureId:    permission.Feature.ID.String(),
-			Name:         permission.Feature.Name,
+			FeatureId:    Feature.ID.String(),
+			Name:         Feature.Name,
 			ParentMenuId: parentId,
-			MenuIcon:     permission.Feature.MenuIcon,
-			MenuNameTh:   permission.Feature.MenuNameTh,
-			MenuNameEn:   permission.Feature.MenuNameEn,
-			MenuSlug:     permission.Feature.MenuSlug,
-			MenuSeqNo:    permission.Feature.MenuSeqNo,
-			IsActive:     permission.Feature.IsActive,
-			CreateAccess: permission.CreateAccess,
-			ReadAccess:   permission.ReadAccess,
-			UpdateAccess: permission.UpdateAccess,
-			DeleteAccess: permission.DeleteAccess,
+			MenuIcon:     Feature.MenuIcon,
+			MenuNameTh:   Feature.MenuNameTh,
+			MenuNameEn:   Feature.MenuNameEn,
+			MenuSlug:     Feature.MenuSlug,
+			MenuSeqNo:    Feature.MenuSeqNo,
+			IsActive:     Feature.IsActive,
+			IsAdd:        *Feature.IsAdd,
+			IsView:       *Feature.IsView,
+			IsEdit:       *Feature.IsEdit,
+			IsDelete:     *Feature.IsDelete,
 		})
 	}
 
@@ -59,7 +64,7 @@ func (s *authorizationServer) Login(ctx context.Context, req *LoginRequest) (*Lo
 			FirstName:         user.FirstName,
 			LastName:          user.LastName,
 			PhoneNumber:       user.PhoneNumber,
-			Avatar:            user.Avatar,
+			Avatar:            *user.Avatar,
 			RoleName:          user.Role.Name,
 			RoleLevel:         user.Role.Level,
 			TwoFactorAuthUrl:  user.TwoFactorAuthUrl,

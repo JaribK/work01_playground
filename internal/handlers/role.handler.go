@@ -62,9 +62,9 @@ func (h *HttpRoleHandler) GetRoleByIdHandler(c *fiber.Ctx) error {
 	return c.JSON(role)
 }
 
-func (h *HttpRoleHandler) GetAllRolesHandler(c *fiber.Ctx) error {
+func (h *HttpRoleHandler) GetAllRolesModifyHandler(c *fiber.Ctx) error {
 	ctx := c.Context()
-	roles, err := h.roleUseCase.GetAllRoles(ctx)
+	roles, err := h.roleUseCase.GetAllRolesModify(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -74,8 +74,8 @@ func (h *HttpRoleHandler) GetAllRolesHandler(c *fiber.Ctx) error {
 	return c.JSON(roles)
 }
 
-func (h *HttpRoleHandler) GetAllRolesNoModifyHandler(c *fiber.Ctx) error {
-	roles, err := h.roleUseCase.GetAllRolesNoModify()
+func (h *HttpRoleHandler) GetAllRolesDefaultHandler(c *fiber.Ctx) error {
+	roles, err := h.roleUseCase.GetAllRolesDefault()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

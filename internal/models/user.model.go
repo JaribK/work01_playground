@@ -14,26 +14,26 @@ type ResAllUserDTOs struct {
 	FullName    string    `json:"fullName"`
 	PhoneNumber string    `json:"phoneNumber"`
 	IsActive    bool      `json:"isActive"`
-	Avatar      string    `json:"avatar"`
+	Avatar      *string   `json:"avatar"`
 	RoleName    string    `json:"roleName"`
 }
 
 type ResUserDTO struct {
-	UserID            uuid.UUID             `json:"userId"`
-	Email             string                `json:"email"`
-	FirstName         string                `json:"firstName"`
-	LastName          string                `json:"lastName"`
-	PhoneNumber       string                `json:"phoneNumber"`
-	Avatar            string                `json:"avatar"`
-	RoleId            uuid.UUID             `json:"roleId"`
-	RoleName          string                `json:"roleName"`
-	RoleLevel         int32                 `json:"roleLevel"`
-	TwoFactorEnabled  bool                  `json:"twoFactorEnabled"`
-	TwoFactorVerified bool                  `json:"twoFactorVerified"`
-	TwoFactorAuthUrl  string                `json:"twoFactorAuthUrl"`
-	TwoFactorToken    string                `json:"twoFactorToken"`
-	Permission        []entities.Permission `json:"-"`
-	Permissions       []PermissionDTO       `json:"permissions"`
+	UserID            uuid.UUID `json:"userId"`
+	Email             string    `json:"email"`
+	FirstName         string    `json:"firstName"`
+	LastName          string    `json:"lastName"`
+	PhoneNumber       string    `json:"phoneNumber"`
+	Avatar            *string   `json:"avatar"`
+	RoleId            uuid.UUID `json:"roleId"`
+	RoleName          string    `json:"roleName"`
+	RoleLevel         int32     `json:"roleLevel"`
+	TwoFactorEnabled  bool      `json:"twoFactorEnabled"`
+	TwoFactorVerified bool      `json:"twoFactorVerified"`
+	TwoFactorAuthUrl  string    `json:"twoFactorAuthUrl"`
+	TwoFactorToken    string    `json:"twoFactorToken"`
+	// Permission        []entities.Permission `json:"-"`
+	Features []FeatureDTODetails `json:"permissions"`
 }
 
 type ResUsersNoPage struct {
@@ -42,7 +42,7 @@ type ResUsersNoPage struct {
 	LastName           string          `json:"lastName" gorm:"type:varchar;not null"`
 	Email              string          `json:"email" gorm:"type:varchar;not null"`
 	PhoneNumber        string          `json:"phoneNumber" gorm:"type:varchar;not null"`
-	Avatar             string          `json:"avatar" gorm:"type:varchar;"`
+	Avatar             *string         `json:"avatar" gorm:"type:varchar;"`
 	TwoFactorEnabled   bool            `json:"twoFacterEnabled" gorm:"not null;default:false"`
 	TwoFactorVerified  bool            `json:"twoFacterVerified" gorm:"not null;default:false"`
 	TwoFactorToken     string          `json:"twoFacterToken" gorm:"type:varchar"`
