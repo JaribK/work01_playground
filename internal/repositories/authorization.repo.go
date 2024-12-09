@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 	"work01/internal/entities"
-	"work01/internal/models"
 
 	"github.com/go-redis/cache/v9"
 	"github.com/google/uuid"
@@ -13,25 +12,28 @@ import (
 	"gorm.io/gorm"
 )
 
-type authorizationRepository struct {
-	db         *gorm.DB
-	redisCache *cache.Cache
-}
+type (
+	AuthorizationRepository interface {
+		Create(auth *entities.Authorization) error
+		GetById(id uuid.UUID) (*entities.Authorization, error)
+		GetAll() ([]entities.Authorization, error)
+		Update(auth *entities.Authorization) error
+		Delete(id uuid.UUID, deleteBy uuid.UUID) error
+		GetUserById(id uuid.UUID) (*entities.User, error)
+		GetUserByIdModify(id uuid.UUID) (*entities.ResUserDTO, error)
+		GetUserByEmail(email string) (*entities.User, error)
+		GetUserByPhoneNumber(phone string) (*entities.User, error)
+		CheckAuthorizationByUserID(id uuid.UUID) bool
+		GetAuthorizationByUserID(id uuid.UUID) (*entities.Authorization, error)
+		DeleteAuthorizationByUserId(id uuid.UUID, tokenString string, ttl time.Duration) error
+		GetAuthorizationByRefreshToken(refreshToken string) (*entities.Authorization, error)
+	}
 
-type AuthorizationRepository interface {
-	Create(auth *entities.Authorization) error
-	GetById(id uuid.UUID) (*entities.Authorization, error)
-	GetAll() ([]entities.Authorization, error)
-	Update(auth *entities.Authorization) error
-	Delete(id uuid.UUID, deleteBy uuid.UUID) error
-	GetUserById(id uuid.UUID) (*entities.User, error)
-	GetUserByIdModify(id uuid.UUID) (*models.ResUserDTO, error)
-	GetUserByEmail(email string) (*entities.User, error)
-	CheckAuthorizationByUserID(id uuid.UUID) bool
-	GetAuthorizationByUserID(id uuid.UUID) (*entities.Authorization, error)
-	DeleteAuthorizationByUserId(id uuid.UUID, tokenString string, ttl time.Duration) error
-	GetAuthorizationByRefreshToken(refreshToken string) (*entities.Authorization, error)
-}
+	authorizationRepository struct {
+		db         *gorm.DB
+		redisCache *cache.Cache
+	}
+)
 
 func NewAuthorizationRepository(db *gorm.DB, redisClient *redis.Client) AuthorizationRepository {
 	c := cache.New(&cache.Options{
@@ -98,24 +100,32 @@ func (r *authorizationRepository) GetUserByEmail(email string) (*entities.User, 
 	return &user, nil
 }
 
-func (r *authorizationRepository) GetUserByIdModify(id uuid.UUID) (*models.ResUserDTO, error) {
+func (r *authorizationRepository) GetUserByPhoneNumber(phone string) (*entities.User, error) {
 	var user entities.User
-	var roleFeature entities.RoleFeature
-	if err := r.db.Preload("Role.Features").Where("id=?", id).First(&user).Error; err != nil {
+	if err := r.db.Preload("Role.Features").Where("phone_number=?", phone).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *authorizationRepository) GetUserByIdModify(id uuid.UUID) (*entities.ResUserDTO, error) {
+	var user entities.User
+	if err := r.db.Model(&entities.User{}).Preload("Role.Features").Where("id=?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
 
-	if err := r.db.Where("role_id=?", user.Role.ID).First(&roleFeature).Error; err != nil {
-		return nil, err
-	}
-
-	var mergedPermissions []models.FeatureDTODetails
+	var mergedPermissions []entities.FeatureDTODetails
 	for _, Feature := range user.Role.Features {
-		mergedPermissions = append(mergedPermissions, models.FeatureDTODetails{
+		var roleFeature entities.RoleFeature
+		if err := r.db.Where("role_id=? AND feature_id=?", user.Role.ID, Feature.ID).First(&roleFeature).Error; err != nil {
+			return nil, err
+		}
+
+		mergedPermissions = append(mergedPermissions, entities.FeatureDTODetails{
 			ID:           Feature.ID,
 			Name:         Feature.Name,
 			ParentMenuId: Feature.ParentMenuId,
-			MenuIcon:     Feature.MenuIcon,
+			MenuIcon:     returnNull(Feature.MenuIcon),
 			MenuNameTh:   Feature.MenuNameTh,
 			MenuNameEn:   Feature.MenuNameEn,
 			MenuSlug:     Feature.MenuSlug,
@@ -128,20 +138,20 @@ func (r *authorizationRepository) GetUserByIdModify(id uuid.UUID) (*models.ResUs
 		})
 	}
 
-	userDTO := models.ResUserDTO{
+	userDTO := entities.ResUserDTO{
 		UserID:            user.ID,
 		Email:             user.Email,
 		FirstName:         user.FirstName,
 		LastName:          user.LastName,
 		PhoneNumber:       user.PhoneNumber,
-		Avatar:            user.Avatar,
+		Avatar:            returnNull(user.Avatar),
 		RoleId:            *user.RoleId,
 		RoleName:          user.Role.Name,
 		RoleLevel:         user.Role.Level,
-		TwoFactorEnabled:  user.TwoFactorEnabled,
-		TwoFactorVerified: user.TwoFactorVerified,
-		TwoFactorAuthUrl:  *user.TwoFactorAuthUrl,
-		TwoFactorToken:    *user.TwoFactorToken,
+		TwoFactorEnabled:  *user.TwoFactorEnabled,
+		TwoFactorVerified: *user.TwoFactorVerified,
+		TwoFactorToken:    returnNull(user.TwoFactorToken),
+		TwoFactorAuthUrl:  returnNull(user.TwoFactorAuthUrl),
 		Features:          mergedPermissions,
 	}
 

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package proto;
+option go_package="internal/proto/filemanagergrpc";
+
+service FileManager{
+    rpc UploadFile(UploadFileReq) returns(UploadFileRes);
+    rpc DeleteFile(DeleteFileReq) returns(DeleteFileRes);
+}
+
+message DeleteFileReq{
+    string file_url =1;
+}
+
+message DeleteFileRes{
+    bool status = 1;
+}
+
+message UploadFileReq{
+    bytes file_chunk = 1;
+    string file_name =2;
+    string filePath = 3;
+}
+
+message UploadFileRes{
+    string file_name = 1;
+    string thumbnail = 2;
+}

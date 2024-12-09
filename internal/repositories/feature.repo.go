@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 	"work01/internal/entities"
-	"work01/internal/models"
 
 	"github.com/go-redis/cache/v9"
 	"github.com/google/uuid"
@@ -13,19 +12,23 @@ import (
 	"gorm.io/gorm"
 )
 
-type featureRepository struct {
-	db         *gorm.DB
-	redisCache *cache.Cache
-}
+type (
+	FeatureRepository interface {
+		Create(user *entities.Feature) error
+		GetById(ctx context.Context, id uuid.UUID) (*entities.FeatureDTO, error)
+		GetMenuIconByFeatureId(id uuid.UUID) (*entities.ResMenuIcon, error)
+		RefForFeature() ([]entities.RefFeatureDTO, error)
+		GetAllDefault() ([]entities.Feature, error)
+		GetAllRoleFeatures(ctx context.Context) ([]entities.FeatureDTO, error)
+		Update(ctx context.Context, feature *entities.Feature) error
+		Delete(id uuid.UUID) error
+	}
 
-type FeatureRepository interface {
-	Create(user *entities.Feature) error
-	GetById(ctx context.Context, id uuid.UUID) (*models.FeatureDTO, error)
-	GetAllDefault() ([]entities.Feature, error)
-	GetAllRoleFeatures(ctx context.Context) ([]models.FeatureDTO, error)
-	Update(ctx context.Context, feature *entities.Feature) error
-	Delete(id uuid.UUID) error
-}
+	featureRepository struct {
+		db         *gorm.DB
+		redisCache *cache.Cache
+	}
+)
 
 func NewFeatureRepository(db *gorm.DB, redisClient *redis.Client) FeatureRepository {
 	c := cache.New(&cache.Options{
@@ -42,9 +45,22 @@ func (r *featureRepository) Create(feature *entities.Feature) error {
 	return nil
 }
 
-func (r *featureRepository) GetById(ctx context.Context, id uuid.UUID) (*models.FeatureDTO, error) {
+func (r *featureRepository) GetMenuIconByFeatureId(id uuid.UUID) (*entities.ResMenuIcon, error) {
+	var feature entities.Feature
+	if err := r.db.Where("id=?", id).First(&feature).Error; err != nil {
+		return nil, err
+	}
+
+	res := entities.ResMenuIcon{
+		MenuIcon: feature.MenuIcon,
+	}
+
+	return &res, nil
+}
+
+func (r *featureRepository) GetById(ctx context.Context, id uuid.UUID) (*entities.FeatureDTO, error) {
 	var obj entities.RoleFeature
-	var featureRole models.FeatureDTO
+	var featureRole entities.FeatureDTO
 
 	cacheKey := fmt.Sprintf("feature:%s", id)
 	if err := r.redisCache.Get(ctx, cacheKey, &featureRole); err == nil {
@@ -55,7 +71,7 @@ func (r *featureRepository) GetById(ctx context.Context, id uuid.UUID) (*models.
 		return nil, err
 	}
 
-	featureRole = models.FeatureDTO{
+	featureRole = entities.FeatureDTO{
 		FeatureDTOID: obj.Feature.ID,
 		FeatureName:  obj.Feature.Name,
 		IsView:       obj.IsView,
@@ -74,6 +90,30 @@ func (r *featureRepository) GetById(ctx context.Context, id uuid.UUID) (*models.
 	}
 
 	return &featureRole, nil
+}
+
+func (r *featureRepository) RefForFeature() ([]entities.RefFeatureDTO, error) {
+	var features []entities.Feature
+	var refFeature []entities.RefFeatureDTO
+
+	if err := r.db.Find(&features).Error; err != nil {
+		return nil, err
+	}
+
+	falsebool := false
+
+	for _, ref := range features {
+		refFeature = append(refFeature, entities.RefFeatureDTO{
+			FeatureDTOID: ref.ID,
+			FeatureName:  ref.Name,
+			IsView:       &falsebool,
+			IsAdd:        &falsebool,
+			IsEdit:       &falsebool,
+			IsDelete:     &falsebool,
+		})
+	}
+
+	return refFeature, nil
 }
 
 func (r *featureRepository) GetAllDefault() ([]entities.Feature, error) {
@@ -113,14 +153,14 @@ func (r *featureRepository) Update(ctx context.Context, feature *entities.Featur
 	}
 
 	var roleFeatures []entities.RoleFeature
-	var featureRole []models.FeatureDTO
+	var featureRole []entities.FeatureDTO
 
 	if err := r.db.Model(&entities.RoleFeature{}).Preload("Feature").Joins("LEFT JOIN features ON role_features.feature_id = features.id").Find(&roleFeatures).Error; err != nil {
 		return err
 	}
 
 	for _, obj := range roleFeatures {
-		featureRole = append(featureRole, models.FeatureDTO{
+		featureRole = append(featureRole, entities.FeatureDTO{
 			FeatureDTOID: obj.Feature.ID,
 			FeatureName:  obj.Feature.Name,
 			IsView:       obj.IsView,
@@ -142,8 +182,8 @@ func (r *featureRepository) Update(ctx context.Context, feature *entities.Featur
 	return nil
 }
 
-func (r *featureRepository) GetAllRoleFeatures(ctx context.Context) ([]models.FeatureDTO, error) {
-	var featureRole []models.FeatureDTO
+func (r *featureRepository) GetAllRoleFeatures(ctx context.Context) ([]entities.FeatureDTO, error) {
+	var featureRole []entities.FeatureDTO
 	var roleFeatures []entities.RoleFeature
 
 	cacheKey1 := "role_feature_list"
@@ -156,7 +196,7 @@ func (r *featureRepository) GetAllRoleFeatures(ctx context.Context) ([]models.Fe
 	}
 
 	for _, obj := range roleFeatures {
-		featureRole = append(featureRole, models.FeatureDTO{
+		featureRole = append(featureRole, entities.FeatureDTO{
 			FeatureDTOID: obj.Feature.ID,
 			FeatureName:  obj.Feature.Name,
 			IsView:       obj.IsView,

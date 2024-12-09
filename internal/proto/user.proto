@@ -1,0 +1,113 @@
+syntax= "proto3";
+
+package proto;
+option go_package="internal/proto/usergrpc";
+
+service UserGrpcService {
+    rpc CreateUser (CreateUserReq) returns (CreateUserRes);
+    rpc GetUserById (GetUserByIdReq) returns (GetUserByIdRes);
+    rpc GetAllUser (GetAllUserReq) returns (GetAllUserRes);
+    rpc UpdateUserById (UpdateUserByIdReq) returns (UpdateUserByIdRes);
+    rpc DeleteUserById (DeleteUserByIdReq) returns (DeleteUserByIdRes);
+}
+
+message CreateUserReq {
+    string first_name = 1;
+    string last_name = 2;
+    string phone_number = 3;
+    string email = 4;
+    string password = 5;
+}
+
+message CreateUserRes {
+    string result = 1;
+}
+
+message GetUserByIdReq {
+    string user_id = 1;
+}
+
+message GetUserByIdRes {
+    string user_id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string email = 4;
+    string phone_number = 5;
+    bool is_active = 6;
+    string avatar = 7;
+    string role_name = 8;
+    // string role_id = 9;
+    optional string role_id = 10;
+}
+
+message GetAllUserReq {
+    int32 page = 1;
+    int32 size = 2;
+    string role_id = 3;
+    string is_active = 4;
+    string full_name = 5;
+    // string phone_nnumber = 6;
+    string phone_number = 7;
+}
+
+message UsersDTO {
+    string user_id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string email = 4;
+    string phone_number = 5;
+    bool is_active = 6;
+    string avatar = 7;
+    string role_name = 8;
+}
+
+message AllUsersDTO {
+    string user_id = 1;
+    string full_name = 2;
+    string email = 3;
+    string phone_number = 4;
+    bool is_active = 5;
+    string avatar = 6;
+    string role_name = 7;
+}
+
+message GetAllUserRes {
+    // string user_id = 1;
+    // string first_name = 2;
+    // string last_name = 3;
+    // string email = 4;
+    // string phone_number = 5;
+    // bool is_active = 6;
+    // string avatar = 7;
+    // string role_name = 8;
+    // repeated UsersDTO users = 9;
+    // Pagination pagination = 10;
+    int32 current_page = 11;
+    int32 total_page = 12;
+    int32 size = 13;
+    int32 total_items = 14;
+    repeated AllUsersDTO users = 15;
+}
+
+message UpdateUserByIdReq {
+    string user_id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string email = 4;
+    string phone_number = 5;
+    bool is_active = 6;
+    // string avatar = 7;
+    // string role_name = 8;
+}
+
+message UpdateUserByIdRes {
+    string result = 1;
+}
+
+message DeleteUserByIdReq {
+    string user_id = 1;
+}
+
+message DeleteUserByIdRes {
+    string result = 1;
+}

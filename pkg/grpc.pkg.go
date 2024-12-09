@@ -3,9 +3,9 @@ package pkg
 import (
 	"log"
 	"net"
+	"work01/internal/proto/usergrpc"
 	"work01/internal/repositories"
 	"work01/internal/usecases"
-	pb "work01/work01/proto"
 
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
@@ -24,15 +24,10 @@ func NewGRPCServer(gormDatabase *gorm.DB, redisClient *redis.Client) {
 
 	s := grpc.NewServer()
 
-	authRepo := repositories.NewAuthorizationRepository(gormDatabase, redisClient)
-	authUsecase := usecases.NewAuthorizationUsecase(authRepo)
-
 	userRepo := repositories.NewUserRepository(gormDatabase, redisClient)
 	userUsecase := usecases.NewUserUsecase(userRepo)
 
-	pb.RegisterGreeterServer(s, pb.NewGreeterServer())
-	pb.RegisterAuthorizationServer(s, pb.NewAuthorizationServer(authUsecase))
-	pb.RegisterUserGrpcServiceServer(s, pb.NewUserGrpcServiceServer(userUsecase))
+	usergrpc.RegisterUserGrpcServiceServer(s, usecases.NewUserGrpcServiceServer(userUsecase))
 
 	log.Printf("Server is listening on port %v", port)
 

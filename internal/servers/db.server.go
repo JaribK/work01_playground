@@ -21,7 +21,7 @@ const (
 
 func NewDBServer() *gorm.DB {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
+		"password=%s dbname=%s sslmode=disable TimeZone=Asia/Bangkok",
 		host, port, user, password, dbname)
 
 	newLogger := logger.New(

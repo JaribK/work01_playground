@@ -8,17 +8,19 @@ import (
 	"github.com/google/uuid"
 )
 
-type RoleFeatureUsecase interface {
-	CreateRoleFeature(rolePermission entities.RoleFeature) error
-	GetRoleFeatureById(ctx context.Context, id uuid.UUID) (*entities.RoleFeature, error)
-	GetAllRoleFeatures(ctx context.Context) ([]entities.RoleFeature, error)
-	UpdateRoleFeature(rolePermission entities.RoleFeature) error
-	DeleteRoleFeature(id uuid.UUID) error
-}
+type (
+	RoleFeatureUsecase interface {
+		CreateRoleFeature(rolePermission entities.RoleFeature) error
+		GetRoleFeatureById(ctx context.Context, id uuid.UUID) (*entities.RoleFeature, error)
+		GetAllRoleFeatures(ctx context.Context) ([]entities.RoleFeature, error)
+		UpdateRoleFeature(rolePermission entities.RoleFeature) error
+		DeleteRoleFeature(id uuid.UUID) error
+	}
 
-type rolePermissionUsecase struct {
-	repo repositories.RoleFeatureRepository
-}
+	rolePermissionUsecase struct {
+		repo repositories.RoleFeatureRepository
+	}
+)
 
 func NewRoleFeatureUsecase(repo repositories.RoleFeatureRepository) RoleFeatureUsecase {
 	return &rolePermissionUsecase{repo: repo}

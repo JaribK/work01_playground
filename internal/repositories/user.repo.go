@@ -5,35 +5,40 @@ import (
 	"fmt"
 	"time"
 	"work01/internal/entities"
-	"work01/internal/models"
 
 	"github.com/go-redis/cache/v9"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-type userRepository struct {
-	db         *gorm.DB
-	redisCache *cache.Cache
-}
+type (
+	UserRepository interface {
+		Create(user *entities.User) error
+		GetById(ctx context.Context, id uuid.UUID) (*entities.ResUserDTO, error)
+		GetProfileUser(id uuid.UUID) (*entities.User, error)
+		GetAvatarUserById(id uuid.UUID) (*entities.ResAvatar, error)
+		GetRoleUserById(id uuid.UUID) (*entities.User, error)
+		GetAllNoPage() ([]entities.ResUsersNoPage, error)
+		GetAllWithPage(ctx context.Context, page, size int, roleId, isActive string, phoneNumber string, fullName string) ([]entities.ResAllUserDTOs, int64, error)
+		Update(ctx context.Context, user *entities.User) error
+		Delete(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error
+		GetUserByEmail(email string) (*entities.User, error)
+		GetRoleByRoleId(id uuid.UUID) (*entities.Role, error)
+		IsEmailExists(email string) (bool, error)
+		IsPhoneExists(phone string) (bool, error)
+		IsEmailExistsForUpdate(email string, id uuid.UUID) (bool, error)
+		IsPhoneExistsForUpdate(phone string, id uuid.UUID) (bool, error)
+		IsSuperAdministrator(id uuid.UUID) (bool, error)
+		CheckThisUserHaveDataInAuth(userId uuid.UUID) (*entities.Authorization, bool, error)
+		DeleteAuthAfterDeleteUser(id uuid.UUID, deleteBy uuid.UUID) error
+	}
 
-type UserRepository interface {
-	Create(user *entities.User) error
-	GetById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error)
-	GetRoleUserById(id uuid.UUID) (*entities.User, error)
-	GetAllNoPage() ([]models.ResUsersNoPage, error)
-	GetAllWithPage(ctx context.Context, page, size int, roleId, isActive string) ([]models.ResAllUserDTOs, int64, error)
-	Update(ctx context.Context, user *entities.User) error
-	Delete(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error
-	GetUserByEmail(email string) (*entities.User, error)
-	IsEmailExists(email string) (bool, error)
-	IsPhoneExists(phone string) (bool, error)
-	IsEmailExistsForUpdate(email string, id uuid.UUID) (bool, error)
-	IsPhoneExistsForUpdate(phone string, id uuid.UUID) (bool, error)
-	IsSuperAdministrator(id uuid.UUID) (bool, error)
-}
+	userRepository struct {
+		db         *gorm.DB
+		redisCache *cache.Cache
+	}
+)
 
 func NewUserRepository(db *gorm.DB, redisClient *redis.Client) UserRepository {
 	c := cache.New(&cache.Options{
@@ -44,41 +49,37 @@ func NewUserRepository(db *gorm.DB, redisClient *redis.Client) UserRepository {
 }
 
 func (r *userRepository) Create(user *entities.User) error {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	user.Password = string(hashedPassword)
-	if err = r.db.Create(&user).Error; err != nil {
+
+	if err := r.db.Create(&user).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *userRepository) GetAllNoPage() ([]models.ResUsersNoPage, error) {
+func (r *userRepository) GetAllNoPage() ([]entities.ResUsersNoPage, error) {
 	var users []entities.User
-	var resUsers []models.ResUsersNoPage
+	var resUsers []entities.ResUsersNoPage
 	if err := r.db.Preload("Role.Features").Find(&users).Error; err != nil {
 		return nil, err
 	}
 
 	for _, user := range users {
-		resUsers = append(resUsers, models.ResUsersNoPage{
+		resUsers = append(resUsers, entities.ResUsersNoPage{
 			ID:                 user.ID,
 			FirstName:          user.FirstName,
 			LastName:           user.LastName,
 			Email:              user.Email,
 			PhoneNumber:        user.PhoneNumber,
-			Avatar:             user.Avatar,
-			TwoFactorEnabled:   user.TwoFactorEnabled,
-			TwoFactorVerified:  user.TwoFactorVerified,
-			TwoFactorToken:     *user.TwoFactorToken,
-			TwoFactorAuthUrl:   *user.TwoFactorAuthUrl,
+			Avatar:             returnNull(user.Avatar),
+			TwoFactorEnabled:   *user.TwoFactorEnabled,
+			TwoFactorVerified:  *user.TwoFactorVerified,
+			TwoFactorToken:     returnNull(user.TwoFactorToken),
+			TwoFactorAuthUrl:   returnNull(user.TwoFactorAuthUrl),
 			RoleId:             user.RoleId,
 			Role:               user.Role,
 			ForgotPasswordCode: user.ForgotPasswordCode,
-			IsActive:           user.IsActive,
+			IsActive:           *user.IsActive,
 			CreatedAt:          user.CreatedAt,
 			CreatedBy:          user.CreatedBy,
 			UpdatedAt:          user.UpdatedAt,
@@ -87,6 +88,14 @@ func (r *userRepository) GetAllNoPage() ([]models.ResUsersNoPage, error) {
 	}
 
 	return resUsers, nil
+}
+
+func returnNull(s string) *string {
+	if s == "" {
+		return nil
+	}
+
+	return &s
 }
 
 func (r *userRepository) GetRoleUserById(id uuid.UUID) (*entities.User, error) {
@@ -98,11 +107,19 @@ func (r *userRepository) GetRoleUserById(id uuid.UUID) (*entities.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.ResUserDTO, error) {
+func (r *userRepository) GetProfileUser(id uuid.UUID) (*entities.User, error) {
 	var user entities.User
-	var userDTO models.ResUserDTO
-	var roleFeature entities.RoleFeature
-	var mergedPermissions []models.FeatureDTODetails
+	if err := r.db.Where("id=?", id).First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*entities.ResUserDTO, error) {
+	var user entities.User
+	var userDTO entities.ResUserDTO
+	var mergedPermissions []entities.FeatureDTODetails
 
 	cacheKey := fmt.Sprintf("user:%s", id)
 
@@ -114,21 +131,22 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.Res
 		return nil, err
 	}
 
-	if err := r.db.Where("role_id=?", user.Role.ID).First(&roleFeature).Error; err != nil {
-		return nil, err
-	}
+	for _, feature := range user.Role.Features {
+		var roleFeature entities.RoleFeature
+		if err := r.db.Where("role_id = ? AND feature_id = ?", user.Role.ID, feature.ID).First(&roleFeature).Error; err != nil {
+			return nil, err
+		}
 
-	for _, Feature := range user.Role.Features {
-		mergedPermissions = append(mergedPermissions, models.FeatureDTODetails{
-			ID:           Feature.ID,
-			Name:         Feature.Name,
-			ParentMenuId: Feature.ParentMenuId,
-			MenuIcon:     Feature.MenuIcon,
-			MenuNameTh:   Feature.MenuNameTh,
-			MenuNameEn:   Feature.MenuNameEn,
-			MenuSlug:     Feature.MenuSlug,
-			MenuSeqNo:    Feature.MenuSeqNo,
-			IsActive:     Feature.IsActive,
+		mergedPermissions = append(mergedPermissions, entities.FeatureDTODetails{
+			ID:           feature.ID,
+			Name:         feature.Name,
+			ParentMenuId: feature.ParentMenuId,
+			MenuIcon:     returnNull(feature.MenuIcon),
+			MenuNameTh:   feature.MenuNameTh,
+			MenuNameEn:   feature.MenuNameEn,
+			MenuSlug:     feature.MenuSlug,
+			MenuSeqNo:    feature.MenuSeqNo,
+			IsActive:     feature.IsActive,
 			IsAdd:        roleFeature.IsAdd,
 			IsView:       roleFeature.IsView,
 			IsEdit:       roleFeature.IsEdit,
@@ -136,20 +154,20 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.Res
 		})
 	}
 
-	userDTO = models.ResUserDTO{
+	userDTO = entities.ResUserDTO{
 		UserID:            user.ID,
 		Email:             user.Email,
 		FirstName:         user.FirstName,
 		LastName:          user.LastName,
 		PhoneNumber:       user.PhoneNumber,
-		Avatar:            user.Avatar,
+		Avatar:            returnNull(user.Avatar),
 		RoleId:            user.Role.ID,
 		RoleName:          user.Role.Name,
 		RoleLevel:         user.Role.Level,
-		TwoFactorEnabled:  user.TwoFactorEnabled,
-		TwoFactorVerified: user.TwoFactorVerified,
-		TwoFactorAuthUrl:  *user.TwoFactorAuthUrl,
-		TwoFactorToken:    *user.TwoFactorToken,
+		TwoFactorEnabled:  *user.TwoFactorEnabled,
+		TwoFactorVerified: *user.TwoFactorVerified,
+		TwoFactorToken:    returnNull(user.TwoFactorToken),
+		TwoFactorAuthUrl:  returnNull(user.TwoFactorAuthUrl),
 		Features:          mergedPermissions,
 	}
 
@@ -165,17 +183,14 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*models.Res
 	return &userDTO, nil
 }
 
-func (r *userRepository) GetAllWithPage(ctx context.Context, page, size int, roleId, isActive string) ([]models.ResAllUserDTOs, int64, error) {
+func (r *userRepository) GetAllWithPage(ctx context.Context, page, size int, roleId, isActive string, phoneNumber string, fullName string) ([]entities.ResAllUserDTOs, int64, error) {
 	var users []entities.User
 	var total int64
-	var userDTOs []models.ResAllUserDTOs
+	var userDTOs []entities.ResAllUserDTOs
 
 	cacheKey := "users_list"
 
 	offset := (page - 1) * size
-	if err := r.db.Model(&entities.User{}).Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
 
 	query := r.db.Model(&entities.User{}).Preload("Role")
 	if roleId != "" {
@@ -184,6 +199,18 @@ func (r *userRepository) GetAllWithPage(ctx context.Context, page, size int, rol
 
 	if isActive != "" {
 		query = query.Where("users.is_active = ?", isActive)
+	}
+
+	if phoneNumber != "" {
+		query = query.Where("users.phone_number LIKE ?", "%"+phoneNumber+"%")
+	}
+
+	if fullName != "" {
+		query.Where("LOWER(CONCAT(first_name,' ',last_name)) LIKE LOWER(?)", "%"+fullName+"%")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
 
 	if err := r.redisCache.Get(ctx, cacheKey, userDTOs); err == nil {
@@ -195,13 +222,13 @@ func (r *userRepository) GetAllWithPage(ctx context.Context, page, size int, rol
 	}
 
 	for _, user := range users {
-		userDTOs = append(userDTOs, models.ResAllUserDTOs{
+		userDTOs = append(userDTOs, entities.ResAllUserDTOs{
 			UserID:      user.ID,
 			Email:       user.Email,
 			FullName:    user.FirstName + " " + user.LastName,
 			PhoneNumber: user.PhoneNumber,
-			IsActive:    user.IsActive,
-			Avatar:      user.Avatar,
+			IsActive:    *user.IsActive,
+			Avatar:      returnNull(user.Avatar),
 			RoleName:    user.Role.Name,
 		})
 	}
@@ -240,7 +267,7 @@ func (r *userRepository) Update(ctx context.Context, user *entities.User) error 
 	//query again
 	cacheKey2 := "users_list"
 	var users []entities.User
-	var userDTOs []models.ResAllUserDTOs
+	var userDTOs []entities.ResAllUserDTOs
 
 	if err := r.redisCache.Delete(ctx, cacheKey2); err != nil {
 		return err
@@ -251,13 +278,13 @@ func (r *userRepository) Update(ctx context.Context, user *entities.User) error 
 	}
 
 	for _, user := range users {
-		userDTOs = append(userDTOs, models.ResAllUserDTOs{
+		userDTOs = append(userDTOs, entities.ResAllUserDTOs{
 			UserID:      user.ID,
 			Email:       user.Email,
 			FullName:    user.FirstName + " " + user.LastName,
 			PhoneNumber: user.PhoneNumber,
-			IsActive:    user.IsActive,
-			Avatar:      user.Avatar,
+			IsActive:    *user.IsActive,
+			Avatar:      returnNull(user.Avatar),
 			RoleName:    user.Role.Name,
 		})
 	}
@@ -275,9 +302,9 @@ func (r *userRepository) Update(ctx context.Context, user *entities.User) error 
 }
 
 func (r *userRepository) Delete(ctx context.Context, id uuid.UUID, deleteBy uuid.UUID) error {
-	if err := r.db.Model(&entities.User{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"deleted_by": deleteBy,
-	}).Error; err != nil {
+	err := r.db.Model(&entities.User{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"deleted_by": deleteBy}).Error
+	if err != nil {
 		return err
 	}
 
@@ -351,4 +378,51 @@ func (r *userRepository) IsSuperAdministrator(id uuid.UUID) (bool, error) {
 	} else {
 		return false, nil
 	}
+}
+
+func (r *userRepository) GetAvatarUserById(id uuid.UUID) (*entities.ResAvatar, error) {
+	var user entities.User
+	if err := r.db.Where("id=?", id).First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	res := entities.ResAvatar{
+		Avatar: user.Avatar,
+	}
+
+	return &res, nil
+}
+
+func (r *userRepository) GetRoleByRoleId(id uuid.UUID) (*entities.Role, error) {
+	var roleOjb entities.Role
+
+	if err := r.db.Preload("Features").Where("id=?", id).First(&roleOjb).Error; err != nil {
+		return nil, err
+	}
+
+	return &roleOjb, nil
+}
+
+func (r *userRepository) CheckThisUserHaveDataInAuth(userId uuid.UUID) (*entities.Authorization, bool, error) {
+	var auth entities.Authorization
+
+	if err := r.db.Where("user_id=?", userId).First(&auth).Error; err != nil {
+		return nil, false, err
+	}
+
+	return &auth, true, nil
+}
+
+func (r *userRepository) DeleteAuthAfterDeleteUser(id uuid.UUID, deleteBy uuid.UUID) error {
+	if err := r.db.Model(&entities.Authorization{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"deleted_by": deleteBy,
+	}).Error; err != nil {
+		return err
+	}
+
+	if err := r.db.Delete(&entities.Authorization{}, id).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

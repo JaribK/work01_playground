@@ -3,10 +3,10 @@ package usecases
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 	"work01/internal/entities"
 	"work01/internal/helpers"
-	"work01/internal/models"
 	"work01/internal/repositories"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -14,21 +14,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type authorizationUsecase struct {
-	repo repositories.AuthorizationRepository
-}
+type (
+	AuthorizationUsecase interface {
+		CreateAuthorization(auth entities.Authorization) error
+		GetAuthorizationById(id uuid.UUID) (*entities.Authorization, error)
+		GetAllAuthorizations() ([]entities.Authorization, error)
+		GetUserDataById(id uuid.UUID) (*entities.ResUserDTO, error)
+		UpdateAuthorization(auth entities.Authorization) error
+		DeleteAuthorization(id uuid.UUID, delBy uuid.UUID) error
+		Login(email, password string) (*entities.User, *entities.AuthToken, error)
+		Logout(id uuid.UUID, token string) error
+		RefreshToken(refreshToken string) (string, error)
+	}
 
-type AuthorizationUsecase interface {
-	CreateAuthorization(auth entities.Authorization) error
-	GetAuthorizationById(id uuid.UUID) (*entities.Authorization, error)
-	GetAllAuthorizations() ([]entities.Authorization, error)
-	GetUserDataById(id uuid.UUID) (*models.ResUserDTO, error)
-	UpdateAuthorization(auth entities.Authorization) error
-	DeleteAuthorization(id uuid.UUID, delBy uuid.UUID) error
-	Login(email, password string) (*entities.User, *models.AuthToken, error)
-	Logout(id uuid.UUID, token string) error
-	RefreshToken(refreshToken string) (string, error)
-}
+	authorizationUsecase struct {
+		repo repositories.AuthorizationRepository
+	}
+)
 
 func NewAuthorizationUsecase(repo repositories.AuthorizationRepository) AuthorizationUsecase {
 	return &authorizationUsecase{repo: repo}
@@ -50,7 +52,7 @@ func (s *authorizationUsecase) GetAuthorizationById(id uuid.UUID) (*entities.Aut
 	return auth, nil
 }
 
-func (s *authorizationUsecase) GetUserDataById(id uuid.UUID) (*models.ResUserDTO, error) {
+func (s *authorizationUsecase) GetUserDataById(id uuid.UUID) (*entities.ResUserDTO, error) {
 	user, err := s.repo.GetUserByIdModify(id)
 	if err != nil {
 		return nil, err
@@ -83,14 +85,31 @@ func (s *authorizationUsecase) DeleteAuthorization(id uuid.UUID, delBy uuid.UUID
 	return nil
 }
 
-func (s *authorizationUsecase) Login(email, password string) (*entities.User, *models.AuthToken, error) {
-	user, err := s.repo.GetUserByEmail(email)
-	if err != nil {
-		return nil, nil, fmt.Errorf("email or password Incorrect")
+func (s *authorizationUsecase) Login(identifier, password string) (*entities.User, *entities.AuthToken, error) {
+	var user *entities.User
+	var err error
+
+	if strings.Contains(identifier, "@") {
+		user, err = s.repo.GetUserByEmail(identifier)
+		if err != nil {
+			return nil, nil, fmt.Errorf("user not found")
+		}
+
+		if !*user.IsActive {
+			return nil, nil, fmt.Errorf("your account was deactivated")
+		}
+	} else {
+		user, err = s.repo.GetUserByPhoneNumber(identifier)
+		if err != nil {
+			return nil, nil, fmt.Errorf("user not found")
+		}
+		if !*user.IsActive {
+			return nil, nil, fmt.Errorf("your account was deactivated")
+		}
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return nil, nil, fmt.Errorf("email or password Incorrect")
+		return nil, nil, fmt.Errorf("email/phoneNumner or password is invalid")
 	}
 
 	token, err := helpers.GenerateToken(user)

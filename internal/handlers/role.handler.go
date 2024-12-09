@@ -5,23 +5,34 @@ import (
 	"github.com/google/uuid"
 
 	"work01/internal/entities"
+	"work01/internal/helpers"
 	"work01/internal/usecases"
 )
 
-type HttpRoleHandler struct {
-	roleUseCase usecases.RoleUsecase
+type (
+	httpRoleHandler struct {
+		roleUseCase usecases.RoleUsecase
+	}
+
+	HttpRoleHandler interface {
+		CreateRoleHandler(c *fiber.Ctx) error
+		GetRoleByIdHandler(c *fiber.Ctx) error
+		GetAllRolesModifyHandler(c *fiber.Ctx) error
+		GetAllRolesDefaultHandler(c *fiber.Ctx) error
+		GetAllRolesDropdownHandler(c *fiber.Ctx) error
+		UpdateRoleHandler(c *fiber.Ctx) error
+		DeleteRoleHandler(c *fiber.Ctx) error
+	}
+)
+
+func NewHttpRoleHandler(useCase usecases.RoleUsecase) HttpRoleHandler {
+	return &httpRoleHandler{roleUseCase: useCase}
 }
 
-func NewHttpRoleHandler(useCase usecases.RoleUsecase) *HttpRoleHandler {
-	return &HttpRoleHandler{roleUseCase: useCase}
-}
-
-func (h *HttpRoleHandler) CreateRoleHandler(c *fiber.Ctx) error {
-	var role entities.Role
-	if err := c.BodyParser(&role); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request.",
-		})
+func (h *httpRoleHandler) CreateRoleHandler(c *fiber.Ctx) error {
+	var roleReq entities.ReqRoleCreate
+	if err := c.BodyParser(&roleReq); err != nil {
+		return helpers.ErrResponse(c, fiber.StatusBadRequest, "Bad Request", err.Error())
 	}
 
 	creBy, err := uuid.Parse(c.Locals("userId").(string))
@@ -29,89 +40,89 @@ func (h *HttpRoleHandler) CreateRoleHandler(c *fiber.Ctx) error {
 		return err
 	}
 
-	role.ID = uuid.New()
-	role.CreatedBy = creBy
-	if err := h.roleUseCase.CreateRole(role); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
+	role := entities.Role{
+		Name:  roleReq.Name,
+		Level: roleReq.Level,
+	}
+
+	var roleFeatures []entities.RoleFeature
+	for _, f := range roleReq.Features {
+		roleFeatures = append(roleFeatures, entities.RoleFeature{
+			FeatureId: f.FeatureId,
+			IsAdd:     f.IsAdd,
+			IsView:    f.IsView,
+			IsEdit:    f.IsEdit,
+			IsDelete:  f.IsDelete,
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	role.ID = uuid.New()
+	role.CreatedBy = creBy
+	if err := h.roleUseCase.CreateRole(role, roleFeatures); err != nil {
+		return helpers.ErrResponse(c, fiber.StatusInternalServerError, "Internal Server Error", err.Error())
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message":      "create role successful.",
 		"created role": role.Name,
+		"roleId":       role.ID,
 	})
-
 }
 
-func (h *HttpRoleHandler) GetRoleByIdHandler(c *fiber.Ctx) error {
+func (h *httpRoleHandler) GetRoleByIdHandler(c *fiber.Ctx) error {
 	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID.",
-		})
+		return helpers.ErrResponse(c, fiber.StatusBadRequest, "Bad Request", err.Error())
 	}
 
 	role, err := h.roleUseCase.GetRoleById(ctx, id)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "role not found.",
-		})
+		return helpers.ErrResponse(c, fiber.StatusNotFound, "Role Not Found", err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(role)
 }
 
-func (h *HttpRoleHandler) GetAllRolesModifyHandler(c *fiber.Ctx) error {
+func (h *httpRoleHandler) GetAllRolesModifyHandler(c *fiber.Ctx) error {
 	ctx := c.Context()
 	roles, err := h.roleUseCase.GetAllRolesModify(ctx)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return helpers.ErrResponse(c, fiber.StatusInternalServerError, "Internal Server Error", err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(roles)
 }
 
-func (h *HttpRoleHandler) GetAllRolesDefaultHandler(c *fiber.Ctx) error {
+func (h *httpRoleHandler) GetAllRolesDefaultHandler(c *fiber.Ctx) error {
 	roles, err := h.roleUseCase.GetAllRolesDefault()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return helpers.ErrResponse(c, fiber.StatusInternalServerError, "Internal Server Error", err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(roles)
 }
 
-func (h *HttpRoleHandler) GetAllRolesDropdownHandler(c *fiber.Ctx) error {
+func (h *httpRoleHandler) GetAllRolesDropdownHandler(c *fiber.Ctx) error {
 	ctx := c.Context()
 	roles, err := h.roleUseCase.GetAllRolesDropdown(ctx)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return helpers.ErrResponse(c, fiber.StatusInternalServerError, "Internal Server Error", err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(roles)
 }
 
-func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
+func (h *httpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID",
-		})
+		return helpers.ErrResponse(c, fiber.StatusBadRequest, "Bad Request", err.Error())
 	}
 
-	var role entities.Role
-	if err := c.BodyParser(&role); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request.",
-		})
+	var roleReq entities.ReqRoleUpdate
+	if err := c.BodyParser(&roleReq); err != nil {
+		return helpers.ErrResponse(c, fiber.StatusBadRequest, "Bad Request", err.Error())
 	}
 
 	updBy, err := uuid.Parse(c.Locals("userId").(string))
@@ -119,12 +130,26 @@ func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 		return err
 	}
 
+	role := entities.Role{
+		Name:  roleReq.Name,
+		Level: roleReq.Level,
+	}
+
+	var roleFeatures []entities.RoleFeature
+	for _, f := range roleReq.Features {
+		roleFeatures = append(roleFeatures, entities.RoleFeature{
+			FeatureId: f.FeatureId,
+			IsAdd:     f.IsAdd,
+			IsView:    f.IsView,
+			IsEdit:    f.IsEdit,
+			IsDelete:  f.IsDelete,
+		})
+	}
+
 	role.ID = id
 	role.UpdatedBy = updBy
-	if err := h.roleUseCase.UpdateRole(ctx, role); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+	if err := h.roleUseCase.UpdateRole(ctx, &role, roleFeatures); err != nil {
+		return helpers.ErrResponse(c, fiber.StatusInternalServerError, "Internal Server Error", err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -133,13 +158,11 @@ func (h *HttpRoleHandler) UpdateRoleHandler(c *fiber.Ctx) error {
 	})
 }
 
-func (h *HttpRoleHandler) DeleteRoleHandler(c *fiber.Ctx) error {
+func (h *httpRoleHandler) DeleteRoleHandler(c *fiber.Ctx) error {
 	ctx := c.Context()
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID",
-		})
+		return helpers.ErrResponse(c, fiber.StatusBadRequest, "Bad Request", err.Error())
 	}
 
 	delBy, err := uuid.Parse(c.Locals("userId").(string))
@@ -148,9 +171,7 @@ func (h *HttpRoleHandler) DeleteRoleHandler(c *fiber.Ctx) error {
 	}
 
 	if err := h.roleUseCase.DeleteRole(ctx, id, delBy); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return helpers.ErrResponse(c, fiber.StatusInternalServerError, "Internal Server Error", err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
